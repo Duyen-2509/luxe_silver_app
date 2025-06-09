@@ -1,17 +1,26 @@
 import 'package:flutter/material.dart';
-
+import 'package:luxe_silver_app/views/home_screen.dart';
+import '../controllers/login_controller.dart';
 import '../constant/app_color.dart';
 import '../constant/app_styles.dart';
 import '../constant/image.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final phoneController = TextEditingController();
-    final passwordController = TextEditingController();
+  State<LoginScreen> createState() => _LoginScreenState();
+}
 
+class _LoginScreenState extends State<LoginScreen> {
+  final phoneController = TextEditingController();
+  final passwordController = TextEditingController();
+  final loginController = LoginController();
+
+  bool _obscurePassword = true; // Biến điều khiển ẩn/hiện mật khẩu
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: SingleChildScrollView(
         child: Padding(
@@ -33,11 +42,24 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: 16),
               TextField(
                 controller: passwordController,
-                obscureText: true,
+                obscureText: _obscurePassword,
                 decoration: InputDecoration(
                   prefixIcon: Icon(Icons.lock),
                   labelText: 'Nhập mật khẩu',
                   border: AppStyles.textFieldBorder,
+                  // Nút hiện/ẩn mật khẩu
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _obscurePassword
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _obscurePassword = !_obscurePassword;
+                      });
+                    },
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
@@ -50,8 +72,29 @@ class LoginScreen extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               ElevatedButton(
-                onPressed: () {
-                  // Xử lý đăng nhập
+                onPressed: () async {
+                  final phone = phoneController.text.trim();
+                  final password = passwordController.text;
+                  final userData = await loginController.loginAndGetUser(
+                    phone,
+                    password,
+                  );
+
+                  if (userData != null) {
+                    // Nếu đăng nhập thành công, chuyển đến HomeScreen
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HomeScreen(userData: userData),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Sai số điện thoại hoặc mật khẩu'),
+                      ),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size.fromHeight(50),
@@ -75,7 +118,6 @@ class LoginScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 20),
-
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

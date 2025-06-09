@@ -6,21 +6,40 @@ import 'package:luxe_silver_app/constant/dieukien%20.dart';
 import '../constant/image.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final Map<String, dynamic> userData;
+  const ProfileScreen({super.key, required this.userData});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final double diem = 18.384;
-  String name = 'Nguyễn Văn A';
-  String sdt = '0123456789';
-  String email = 'nguyenvana@gmail.com';
-  String dc = 'tphcm';
-  DateTime ngaysinh = DateTime(2000, 1, 1);
-  String gioitinh = 'Nữ';
+  late String name;
+  late String sdt;
+  late String email;
+  late String dc;
+  late DateTime ngaysinh;
+  late String gioitinh;
+  late String role;
+  late int diem;
   @override
+  void initState() {
+    super.initState();
+    // Lấy dữ liệu từ userData
+    name = widget.userData['ten'] ?? '';
+    sdt = widget.userData['sodienthoai'] ?? '';
+    email = widget.userData['email'] ?? '';
+    dc = widget.userData['diachi'] ?? '';
+    ngaysinh =
+        DateTime.tryParse(widget.userData['ngaysinh'] ?? '') ??
+        DateTime(2000, 1, 1);
+    gioitinh = widget.userData['gioitinh'] ?? '';
+    role = widget.userData['role'] ?? '';
+    diem =
+        int.tryParse(widget.userData['diem']?.toString() ?? '0') ??
+        0; // Ép kiểu an toàn
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
@@ -50,7 +69,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              Text('$diem điểm', style: const TextStyle(fontSize: 16)),
+              if (role == 'khach_hang')
+                Text('$diem điểm', style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 20),
               // Họ tên
               ListTile(
@@ -453,167 +473,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 trailing: IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        String selectedGender = gioitinh;
-                        return StatefulBuilder(
-                          builder: (context, setStateDialog) {
-                            return AlertDialog(
-                              title: const Text('Chọn giới tính'),
-                              content: DropdownButton<String>(
-                                value: selectedGender,
-                                isExpanded: true,
-                                items:
-                                    ['Nam', 'Nữ']
-                                        .map(
-                                          (gender) => DropdownMenuItem(
-                                            value: gender,
-                                            child: Text(gender),
-                                          ),
-                                        )
-                                        .toList(),
-                                onChanged: (value) {
-                                  setStateDialog(() {
-                                    selectedGender = value!;
-                                  });
-                                },
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Hủy'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      gioitinh = selectedGender;
-                                    });
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('Lưu'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                    );
+                    showGenderDialog(context, gioitinh);
                   },
                 ),
               ),
               const Divider(),
               //Đổi mật khẩu
-              ListTile(
-                leading: const Icon(Icons.lock),
-                title: const Text('Đổi mật khẩu'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    String oldPassword = '';
-                    String newPassword = '';
-                    String confirmPassword = '';
-                    String? errorText;
-
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return StatefulBuilder(
-                          builder: (context, setStateDialog) {
-                            return AlertDialog(
-                              title: const Text('Đổi mật khẩu'),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  TextField(
-                                    obscureText: true,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Mật khẩu cũ',
-                                    ),
-                                    onChanged: (value) => oldPassword = value,
-                                  ),
-                                  const SizedBox(height: 10),
-                                  TextField(
-                                    obscureText: true,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Mật khẩu mới',
-                                    ),
-                                    onChanged: (value) => newPassword = value,
-                                  ),
-                                  const SizedBox(height: 10),
-                                  TextField(
-                                    obscureText: true,
-                                    decoration: const InputDecoration(
-                                      labelText: 'Xác nhận mật khẩu mới',
-                                    ),
-                                    onChanged:
-                                        (value) => confirmPassword = value,
-                                  ),
-                                  if (errorText != null)
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 8.0),
-                                      child: Text(
-                                        errorText!,
-                                        style: const TextStyle(
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Hủy'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    // Kiểm tra hợp lệ
-                                    if (newPassword != confirmPassword) {
-                                      setStateDialog(() {
-                                        errorText = 'Mật khẩu mới không khớp';
-                                      });
-                                      return;
-                                    }
-                                    if (!PasswordValidator.isValid(
-                                      newPassword,
-                                    )) {
-                                      setStateDialog(() {
-                                        errorText =
-                                            'Mật khẩu mới phải ít nhất 8 ký tự và có ký tự đặc biệt';
-                                      });
-                                      return;
-                                    }
-                                    if (oldPassword.isEmpty ||
-                                        newPassword.isEmpty) {
-                                      setStateDialog(() {
-                                        errorText =
-                                            'Vui lòng nhập đầy đủ thông tin';
-                                      });
-                                      return;
-                                    }
-                                    // TODO: Kiểm tra mật khẩu cũ đúng chưa (nếu có backend)
-                                    // Đổi mật khẩu thành công
-                                    Navigator.pop(context);
-                                    // Hiển thị thông báo hoặc xử lý tiếp
-                                  },
-                                  child: const Text('Lưu'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                    );
-                  },
+              if (role != 'admin')
+                ListTile(
+                  leading: const Icon(Icons.lock),
+                  title: const Text('Đổi mật khẩu'),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () {
+                      showChangePasswordDialog(context);
+                    },
+                  ),
                 ),
-              ),
-              const Divider(),
+
               const SizedBox(height: 20),
               //nút đăng xuất
               ElevatedButton(
                 onPressed: () {
-                  Navigator.pushNamed(context, '/login');
+                  Navigator.pushNamedAndRemoveUntil(
+                    context,
+                    '/login',
+                    (route) => false,
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   minimumSize: Size.fromHeight(50),
@@ -631,3 +517,135 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 }
+
+// đổi mật khẩu
+void showChangePasswordDialog(BuildContext context) {
+  String oldPassword = '';
+  String newPassword = '';
+  String confirmPassword = '';
+  String? errorText;
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text('Đổi mật khẩu'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'Mật khẩu cũ'),
+                  onChanged: (value) => oldPassword = value,
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  obscureText: true,
+                  decoration: const InputDecoration(labelText: 'Mật khẩu mới'),
+                  onChanged: (value) => newPassword = value,
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Xác nhận mật khẩu mới',
+                  ),
+                  onChanged: (value) => confirmPassword = value,
+                ),
+                if (errorText != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0),
+                    child: Text(
+                      errorText!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Hủy'),
+              ),
+              TextButton(
+                onPressed: () {
+                  // Kiểm tra hợp lệ
+                  if (newPassword != confirmPassword) {
+                    setStateDialog(() {
+                      errorText = 'Mật khẩu mới không khớp';
+                    });
+                    return;
+                  }
+                  if (!PasswordValidator.isValid(newPassword)) {
+                    setStateDialog(() {
+                      errorText =
+                          'Mật khẩu mới phải ít nhất 8 ký tự và có ký tự đặc biệt';
+                    });
+                    return;
+                  }
+                  if (oldPassword.isEmpty || newPassword.isEmpty) {
+                    setStateDialog(() {
+                      errorText = 'Vui lòng nhập đầy đủ thông tin';
+                    });
+                    return;
+                  }
+                  // TODO: Kiểm tra mật khẩu cũ đúng chưa (nếu có backend)
+                  Navigator.pop(context);
+                  // Hiển thị thông báo hoặc xử lý tiếp
+                },
+                child: const Text('Lưu'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+//Giới tính
+// ...existing code...
+void showGenderDialog(BuildContext context, String currentGender) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      String selectedGender = currentGender; // Use the parameter
+      return StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text('Chọn giới tính'),
+            content: DropdownButton<String>(
+              value: selectedGender,
+              isExpanded: true,
+              items:
+                  ['Nam', 'Nữ']
+                      .map(
+                        (gender) => DropdownMenuItem(
+                          value: gender,
+                          child: Text(gender),
+                        ),
+                      )
+                      .toList(),
+              onChanged: (value) {
+                setStateDialog(() {
+                  selectedGender = value!;
+                });
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(selectedGender);
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+// ...existing code...

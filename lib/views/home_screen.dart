@@ -7,6 +7,9 @@ import 'package:luxe_silver_app/views/profileScreen.dart';
 import '../controllers/product_data.dart';
 
 class HomeScreen extends StatefulWidget {
+  final Map<String, dynamic> userData;
+  const HomeScreen({Key? key, required this.userData}) : super(key: key);
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -14,12 +17,15 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   int _selectedIndex = 0;
+
   void _onItemTapped(int index) {
     if (index == 1) {
       // Chuyển sang màn hình giỏ hàng
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => CartScreen()),
+        MaterialPageRoute(
+          builder: (context) => CartScreen(userData: widget.userData),
+        ),
       );
     }
     // else if (index == 2) {
@@ -31,7 +37,9 @@ class _HomeScreenState extends State<HomeScreen> {
     else if (index == 3) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => ProfileScreen()),
+        MaterialPageRoute(
+          builder: (context) => ProfileScreen(userData: widget.userData),
+        ),
       );
     } else if (index == 0) {
       // Nếu không phải là trang đầu thì pop về trang đầu
@@ -170,10 +178,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   MaterialPageRoute(
                     builder:
                         (context) => ProductDetailScreen(
+                          userData: widget.userData,
                           productId: sanPham.idSp.toString(),
-                          productName: sanPham.tenSp,
-                          productImage: sanPham.inhManh,
-                          price: double.tryParse(sanPham.gia) ?? 0,
                         ),
                   ),
                 );
@@ -201,7 +207,7 @@ class _HomeScreenState extends State<HomeScreen> {
           selectedItemColor: AppColors.bottomNavSelected,
           unselectedItemColor: AppColors.bottomNavUnselected,
           currentIndex: _selectedIndex,
-          onTap: _onItemTapped, // Thêm dòng này
+          onTap: _onItemTapped,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
             BottomNavigationBarItem(
