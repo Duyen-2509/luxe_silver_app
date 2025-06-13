@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/views/forgotPassword.dart';
 import 'package:luxe_silver_app/views/home_screen.dart';
 import '../controllers/login_controller.dart';
 import '../constant/app_color.dart';
@@ -66,7 +67,15 @@ class _LoginScreenState extends State<LoginScreen> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ForgotPasswordScreen(),
+                      ),
+                    );
+                    ;
+                  },
                   child: const Text('Quên mật khẩu?'),
                 ),
               ),
@@ -81,7 +90,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   );
 
                   if (userData != null) {
-                    // Nếu đăng nhập thành công, chuyển đến HomeScreen
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
@@ -113,8 +121,22 @@ class _LoginScreenState extends State<LoginScreen> {
                   size: AppStyles.googleIconSize,
                   color: AppColors.googleIconColor,
                 ),
-                onPressed: () {
-                  // Xử lý Google login
+                onPressed: () async {
+                  final userData = await loginController.loginWithGoogle();
+                  if (userData != null) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HomeScreen(userData: userData),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Đăng nhập Google thất bại!'),
+                      ),
+                    );
+                  }
                 },
               ),
               const SizedBox(height: 20),

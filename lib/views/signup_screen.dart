@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/views/home_screen.dart';
 import '../constant/app_color.dart';
 import '../constant/app_styles.dart';
 import '../constant/image.dart';
 import '../constant/dieukien .dart';
 import '../repository/auth_repository.dart';
 import '../services/api_service.dart';
+import '../controllers/login_controller.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -16,6 +18,7 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   // Khởi tạo repository để gọi API
   final AuthRepository authRepository = AuthRepository(ApiService());
+  final loginController = LoginController();
 
   // Controller cho các ô nhập liệu
   final TextEditingController nameController = TextEditingController();
@@ -205,8 +208,22 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   size: AppStyles.googleIconSize,
                   color: AppColors.googleIconColor,
                 ),
-                onPressed: () {
-                  // Xử lý đăng ký bằng Google nếu muốn
+                onPressed: () async {
+                  final userData = await loginController.loginWithGoogle();
+                  if (userData != null) {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => HomeScreen(userData: userData),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Đăng nhập Google thất bại!'),
+                      ),
+                    );
+                  }
                 },
               ),
               // Đường dẫn chuyển sang đăng nhập

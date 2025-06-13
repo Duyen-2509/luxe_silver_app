@@ -57,4 +57,26 @@ class AuthRepository {
       return {'error': 'Không thể kết nối đến server'};
     }
   }
+
+  /// Đăng nhập Google (gửi dữ liệu lên API Laravel)
+  Future<Map<String, dynamic>?> loginWithGoogleApi({
+    required String email,
+    required String name,
+    String? phone,
+  }) async {
+    final url = Uri.parse(apiService.baseUrl + 'login-google');
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'email': email, 'ten': name, 'sodienthoai': phone}),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body);
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 }

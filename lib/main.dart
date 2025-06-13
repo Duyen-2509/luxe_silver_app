@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:luxe_silver_app/views/home_screen.dart';
-import 'package:luxe_silver_app/views/profileScreen.dart';
+import 'package:luxe_silver_app/views/checkout.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'constant/app_color.dart';
 import 'views/login_screen.dart';
 import 'views/signup_screen.dart';
+import 'firebase_options.dart';
 
-void main() {
-  runApp(const LuxeSilverApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  runApp(LuxeSilverApp());
 }
 
 class LuxeSilverApp extends StatelessWidget {
@@ -19,7 +23,10 @@ class LuxeSilverApp extends StatelessWidget {
       title: 'LuxeSilver',
       debugShowCheckedModeBanner: false,
       initialRoute: '/login',
-      theme: ThemeData(scaffoldBackgroundColor: AppColors.background),
+      theme: ThemeData(
+        scaffoldBackgroundColor: AppColors.background,
+        fontFamily: 'Roboto',
+      ),
       routes: {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),

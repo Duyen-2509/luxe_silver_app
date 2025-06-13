@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/constant/dieukien%20.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import '../services/vietnam_location_api.dart';
 
 import '../constant/image.dart';
 
@@ -21,7 +24,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late DateTime ngaysinh;
   late String gioitinh;
   late String role;
-  late int diem;
+  late double diem;
   @override
   void initState() {
     super.initState();
@@ -35,9 +38,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
         DateTime(2000, 1, 1);
     gioitinh = widget.userData['gioitinh'] ?? '';
     role = widget.userData['role'] ?? '';
-    diem =
-        int.tryParse(widget.userData['diem']?.toString() ?? '0') ??
-        0; // Ép kiểu an toàn
+    final rawDiem = widget.userData['diem'];
+    if (rawDiem is int) {
+      diem = rawDiem.toDouble();
+    } else if (rawDiem is double) {
+      diem = rawDiem;
+    } else if (rawDiem is String) {
+      diem = double.tryParse(rawDiem) ?? 0;
+    } else {
+      diem = 0;
+    } // Ép kiểu an toàn
+    //print('userData: ${widget.userData}');
   }
 
   Widget build(BuildContext context) {
@@ -62,15 +73,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     color: Colors.black, // Viền đen
                   ),
                 ),
-                child: const CircleAvatar(
+                child: CircleAvatar(
                   radius: 50,
-                  backgroundImage: AssetImage(AppImages.avatar),
+                  backgroundImage:
+                      FirebaseAuth.instance.currentUser?.photoURL != null
+                          ? NetworkImage(
+                            FirebaseAuth.instance.currentUser!.photoURL!,
+                          )
+                          : const AssetImage(AppImages.avatar) as ImageProvider,
                   backgroundColor: Colors.transparent,
                 ),
               ),
               const SizedBox(height: 10),
               if (role == 'khach_hang')
-                Text('$diem điểm', style: const TextStyle(fontSize: 16)),
+                Text(
+                  '${diem.toStringAsFixed(3)} điểm',
+                  style: const TextStyle(fontSize: 16),
+                ),
               const SizedBox(height: 20),
               // Họ tên
               ListTile(
@@ -80,39 +99,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 trailing: IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () {
-                    String newName = name;
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text('Họ tên'),
-                          content: TextField(
-                            decoration: const InputDecoration(
-                              labelText: 'Nhập họ tên mới',
-                            ),
-                            controller: TextEditingController(text: newName),
-                            onChanged: (value) {
-                              newName = value;
-                            },
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Hủy'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  name = newName; // Cập nhật biến thành viên
-                                });
-                                Navigator.pop(context);
-                              },
-                              child: const Text('Lưu'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
+                    showNameDialog(context, name, (newName) {
+                      setState(() {
+                        name = newName;
+                      });
+                    });
                   },
                 ),
               ),
@@ -125,46 +116,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 trailing: IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () {
-                    String newPhone = sdt;
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          title: const Text('Số điện thoại'),
-                          content: TextField(
-                            decoration: const InputDecoration(
-                              labelText: 'Nhập số điện thoại mới',
-                              counterText: '', // Ẩn bộ đếm ký tự nếu muốn
-                            ),
-                            controller: TextEditingController(text: newPhone),
-                            keyboardType: TextInputType.phone,
-                            maxLength: 10, // Chỉ cho nhập tối đa 10 số
-                            inputFormatters: [
-                              FilteringTextInputFormatter
-                                  .digitsOnly, // Chỉ cho nhập số
-                            ],
-                            onChanged: (value) {
-                              newPhone = value;
-                            },
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Hủy'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                setState(() {
-                                  sdt = newPhone;
-                                });
-                                Navigator.pop(context);
-                              },
-                              child: const Text('Lưu'),
-                            ),
-                          ],
-                        );
-                      },
-                    );
+                    showPhoneDialog(context, sdt, (newPhone) {
+                      setState(() {
+                        sdt = newPhone;
+                      });
+                    });
                   },
                 ),
               ),
@@ -177,58 +133,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 trailing: IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () {
-                    String newEmail = email;
-                    String? errorText;
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return StatefulBuilder(
-                          builder: (context, setStateDialog) {
-                            return AlertDialog(
-                              title: const Text('Email'),
-                              content: TextField(
-                                decoration: InputDecoration(
-                                  labelText: 'Nhập email mới',
-                                  errorText: errorText,
-                                ),
-                                controller: TextEditingController(
-                                  text: newEmail,
-                                ),
-                                keyboardType: TextInputType.emailAddress,
-                                onChanged: (value) {
-                                  newEmail = value;
-                                },
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Hủy'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    // Kiểm tra định dạng email
-                                    final emailRegex = RegExp(
-                                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                                    );
-                                    if (!emailRegex.hasMatch(newEmail)) {
-                                      setStateDialog(() {
-                                        errorText = 'Email không hợp lệ';
-                                      });
-                                      return;
-                                    }
-                                    setState(() {
-                                      email = newEmail;
-                                    });
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('Lưu'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                    );
+                    showEmailDialog(context, email, (newEmail) {
+                      setState(() {
+                        email = newEmail;
+                      });
+                    });
                   },
                 ),
               ),
@@ -241,134 +150,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 trailing: IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () {
-                    // Dữ liệu mẫu
-                    List<String> cities = ['TP.HCM', 'Hà Nội'];
-                    Map<String, List<String>> districts = {
-                      'TP.HCM': ['Quận 1', 'Quận 3'],
-                      'Hà Nội': ['Hoàn Kiếm', 'Ba Đình'],
-                    };
-                    Map<String, List<String>> wards = {
-                      'Quận 1': ['Phường Bến Nghé', 'Phường Bến Thành'],
-                      'Quận 3': ['Phường 6', 'Phường 7'],
-                      'Hoàn Kiếm': ['Phường Hàng Bạc', 'Phường Hàng Đào'],
-                      'Ba Đình': ['Phường Điện Biên', 'Phường Kim Mã'],
-                    };
-
-                    String selectedCity = cities.first;
-                    String selectedDistrict = districts[selectedCity]!.first;
-                    String selectedWard = wards[selectedDistrict]!.first;
-                    String houseNumber = '';
-
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return StatefulBuilder(
-                          builder: (context, setStateDialog) {
-                            return AlertDialog(
-                              title: const Text('Chỉnh sửa địa chỉ'),
-                              content: SingleChildScrollView(
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    // Thành phố
-                                    DropdownButton<String>(
-                                      value: selectedCity,
-                                      isExpanded: true,
-                                      items:
-                                          cities
-                                              .map(
-                                                (city) => DropdownMenuItem(
-                                                  value: city,
-                                                  child: Text(city),
-                                                ),
-                                              )
-                                              .toList(),
-                                      onChanged: (value) {
-                                        setStateDialog(() {
-                                          selectedCity = value!;
-                                          selectedDistrict =
-                                              districts[selectedCity]!.first;
-                                          selectedWard =
-                                              wards[selectedDistrict]!.first;
-                                        });
-                                      },
-                                    ),
-                                    const SizedBox(height: 10),
-                                    // Quận/huyện
-                                    DropdownButton<String>(
-                                      value: selectedDistrict,
-                                      isExpanded: true,
-                                      items:
-                                          districts[selectedCity]!
-                                              .map(
-                                                (district) => DropdownMenuItem(
-                                                  value: district,
-                                                  child: Text(district),
-                                                ),
-                                              )
-                                              .toList(),
-                                      onChanged: (value) {
-                                        setStateDialog(() {
-                                          selectedDistrict = value!;
-                                          selectedWard =
-                                              wards[selectedDistrict]!.first;
-                                        });
-                                      },
-                                    ),
-                                    const SizedBox(height: 10),
-                                    // Phường/xã
-                                    DropdownButton<String>(
-                                      value: selectedWard,
-                                      isExpanded: true,
-                                      items:
-                                          wards[selectedDistrict]!
-                                              .map(
-                                                (ward) => DropdownMenuItem(
-                                                  value: ward,
-                                                  child: Text(ward),
-                                                ),
-                                              )
-                                              .toList(),
-                                      onChanged: (value) {
-                                        setStateDialog(() {
-                                          selectedWard = value!;
-                                        });
-                                      },
-                                    ),
-                                    const SizedBox(height: 10),
-                                    // Số nhà, ấp
-                                    TextField(
-                                      decoration: const InputDecoration(
-                                        labelText: 'Số nhà, ấp, khác',
-                                      ),
-                                      onChanged: (value) {
-                                        houseNumber = value;
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Hủy'),
-                                ),
-                                TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      dc =
-                                          '$houseNumber, $selectedWard, $selectedDistrict, $selectedCity';
-                                    });
-                                    Navigator.pop(context);
-                                  },
-                                  child: const Text('Lưu'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                      },
-                    );
+                    showAddressDialog(context, dc, (newAddress) {
+                      setState(() {
+                        dc = newAddress;
+                      });
+                    });
                   },
                 ),
               ),
@@ -383,84 +169,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 trailing: IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () async {
-                    DateTime? selectedDate = ngaysinh;
-
-                    await showDialog(
-                      context: context,
-                      builder: (context) {
-                        TextEditingController
-                        controller = TextEditingController(
-                          text:
-                              '${ngaysinh.day}/${ngaysinh.month}/${ngaysinh.year}',
-                        );
-
-                        return AlertDialog(
-                          title: const Text('Chỉnh sửa ngày sinh'),
-                          content: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              TextField(
-                                controller: controller,
-                                readOnly: true,
-                                keyboardType: TextInputType.datetime,
-                                decoration: const InputDecoration(
-                                  labelText: 'Nhập ngày (dd/mm/yyyy)',
-                                ),
-                                onChanged: (value) {
-                                  try {
-                                    final parts = value.split('/');
-                                    if (parts.length == 3) {
-                                      final day = int.parse(parts[0]);
-                                      final month = int.parse(parts[1]);
-                                      final year = int.parse(parts[2]);
-                                      selectedDate = DateTime(year, month, day);
-                                    }
-                                  } catch (_) {}
-                                },
-                              ),
-                              const SizedBox(height: 10),
-                              ElevatedButton.icon(
-                                icon: const Icon(Icons.calendar_today),
-                                label: const Text('Chọn từ lịch'),
-                                onPressed: () async {
-                                  final date = await showDatePicker(
-                                    context: context,
-                                    initialDate: selectedDate,
-                                    firstDate: DateTime(1900),
-                                    lastDate: DateTime.now(),
-                                  );
-                                  if (date != null) {
-                                    selectedDate = date;
-                                    controller.text =
-                                        '${date.day}/${date.month}/${date.year}';
-                                  }
-                                },
-                              ),
-                            ],
-                          ),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('Hủy'),
-                            ),
-                            TextButton(
-                              onPressed: () {
-                                // Cập nhật giá trị ngày sinh ở đây
-                                // Ví dụ: setState(() => ngaysinh = selectedDate);
-                                Navigator.pop(context, selectedDate);
-                              },
-                              child: const Text('Lưu'),
-                            ),
-                          ],
-                        );
-                      },
-                    ).then((value) {
-                      if (value != null && value is DateTime) {
-                        setState(() {
-                          ngaysinh = value;
-                        });
-                      }
-                    });
+                    await showEditBirthdayDialog(context);
                   },
                 ),
               ),
@@ -494,7 +203,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const SizedBox(height: 20),
               //nút đăng xuất
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
+                  await signOutAll(); // <-- Đăng xuất khỏi Google và Firebase
                   Navigator.pushNamedAndRemoveUntil(
                     context,
                     '/login',
@@ -516,6 +226,160 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+}
+
+Future<void> signOutAll() async {
+  await FirebaseAuth.instance.signOut();
+  await GoogleSignIn().signOut();
+}
+
+// tên
+void showNameDialog(
+  BuildContext context,
+  String currentName,
+  void Function(String) onNameChanged,
+) {
+  String newName = currentName;
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Họ tên'),
+        content: TextField(
+          decoration: const InputDecoration(labelText: 'Nhập họ tên mới'),
+          controller: TextEditingController(text: newName),
+          onChanged: (value) {
+            newName = value;
+          },
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Hủy'),
+          ),
+          TextButton(
+            onPressed: () {
+              onNameChanged(newName); // Gọi callback để cập nhật tên
+              Navigator.pop(context);
+            },
+            child: const Text('Lưu'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+//số điện thoại
+void showPhoneDialog(
+  BuildContext context,
+  String sdt,
+  void Function(String) onPhoneChanged,
+) {
+  String newPhone = sdt;
+  String? errorText;
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text('Số điện thoại'),
+            content: TextField(
+              decoration: InputDecoration(
+                labelText: 'Nhập số điện thoại mới',
+                counterText: '',
+                errorText: errorText,
+              ),
+              controller: TextEditingController(text: newPhone),
+              keyboardType: TextInputType.phone,
+              maxLength: 10,
+              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              onChanged: (value) {
+                newPhone = value;
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Hủy'),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (!PasswordValidator.phoneValidator(newPhone)) {
+                    setStateDialog(() {
+                      errorText = 'Số điện thoại không hợp lệ';
+                    });
+                    return;
+                  }
+                  onPhoneChanged(newPhone);
+                  Navigator.pop(context);
+                },
+                child: const Text('Lưu'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
+//email
+void showEmailDialog(
+  BuildContext context,
+  String email,
+  void Function(String) onEmailChanged,
+) {
+  String newEmail = email;
+  String? errorText;
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setStateDialog) {
+          return AlertDialog(
+            title: const Text('Email'),
+            content: TextField(
+              decoration: InputDecoration(
+                labelText: 'Nhập email mới',
+                errorText: errorText,
+              ),
+              controller: TextEditingController(text: newEmail),
+              keyboardType: TextInputType.emailAddress,
+              onChanged: (value) {
+                newEmail = value;
+              },
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Hủy'),
+              ),
+              TextButton(
+                onPressed: () {
+                  final emailRegex = RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  );
+                  if (!emailRegex.hasMatch(newEmail)) {
+                    setStateDialog(() {
+                      errorText = 'Email không hợp lệ';
+                    });
+                    return;
+                  }
+                  onEmailChanged(
+                    newEmail,
+                  ); // Gọi callback để cập nhật email ở widget cha
+                  Navigator.pop(context);
+                },
+                child: const Text('Lưu'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
 }
 
 // đổi mật khẩu
@@ -606,7 +470,6 @@ void showChangePasswordDialog(BuildContext context) {
 }
 
 //Giới tính
-// ...existing code...
 void showGenderDialog(BuildContext context, String currentGender) {
   showDialog(
     context: context,
@@ -648,4 +511,250 @@ void showGenderDialog(BuildContext context, String currentGender) {
     },
   );
 }
-// ...existing code...
+
+// Địa chỉ
+void showAddressDialog(
+  BuildContext context,
+  String currentAddress,
+  void Function(String) onAddressChanged,
+) {
+  showDialog(
+    context: context,
+    builder:
+        (context) => _AddressDialog(
+          currentAddress: currentAddress,
+          onAddressChanged: onAddressChanged,
+        ),
+  );
+}
+
+class _AddressDialog extends StatefulWidget {
+  final String currentAddress;
+  final void Function(String) onAddressChanged;
+  const _AddressDialog({
+    required this.currentAddress,
+    required this.onAddressChanged,
+  });
+
+  @override
+  State<_AddressDialog> createState() => _AddressDialogState();
+}
+
+class _AddressDialogState extends State<_AddressDialog> {
+  List<Map<String, dynamic>> cities = [];
+  List<Map<String, dynamic>> districts = [];
+  List<Map<String, dynamic>> wards = [];
+  Map<String, dynamic>? selectedCity;
+  Map<String, dynamic>? selectedDistrict;
+  Map<String, dynamic>? selectedWard;
+  String houseNumber = '';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCities().then((data) {
+      setState(() {
+        cities = data;
+        if (cities.isNotEmpty) {
+          selectedCity = cities.first;
+          _loadDistricts(selectedCity!['code']);
+        }
+      });
+    });
+  }
+
+  void _loadDistricts(int cityId) async {
+    final data = await fetchDistricts(cityId);
+    setState(() {
+      districts = data;
+      selectedDistrict = districts.isNotEmpty ? districts.first : null;
+      wards = [];
+      selectedWard = null;
+      if (selectedDistrict != null) _loadWards(selectedDistrict!['code']);
+    });
+  }
+
+  void _loadWards(int districtId) async {
+    final data = await fetchWards(districtId);
+    setState(() {
+      wards = data;
+      selectedWard = wards.isNotEmpty ? wards.first : null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Chỉnh sửa địa chỉ'),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DropdownButton<Map<String, dynamic>>(
+              value: selectedCity,
+              isExpanded: true,
+              items:
+                  cities
+                      .map(
+                        (city) => DropdownMenuItem(
+                          value: city,
+                          child: Text(city['name']),
+                        ),
+                      )
+                      .toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedCity = value;
+                  _loadDistricts(value!['code']);
+                });
+              },
+            ),
+            const SizedBox(height: 10),
+            DropdownButton<Map<String, dynamic>>(
+              value: selectedDistrict,
+              isExpanded: true,
+              items:
+                  districts
+                      .map(
+                        (district) => DropdownMenuItem(
+                          value: district,
+                          child: Text(district['name']),
+                        ),
+                      )
+                      .toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedDistrict = value;
+                  _loadWards(value!['code']);
+                });
+              },
+            ),
+            const SizedBox(height: 10),
+            DropdownButton<Map<String, dynamic>>(
+              value: selectedWard,
+              isExpanded: true,
+              items:
+                  wards
+                      .map(
+                        (ward) => DropdownMenuItem(
+                          value: ward,
+                          child: Text(ward['name']),
+                        ),
+                      )
+                      .toList(),
+              onChanged: (value) {
+                setState(() {
+                  selectedWard = value;
+                });
+              },
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Số nhà, ấp, đường, khác',
+              ),
+              onChanged: (value) {
+                houseNumber = value;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Hủy'),
+        ),
+        TextButton(
+          onPressed: () {
+            widget.onAddressChanged(
+              '$houseNumber, ${selectedWard?['name'] ?? ''}, ${selectedDistrict?['name'] ?? ''}, ${selectedCity?['name'] ?? ''}',
+            );
+            Navigator.pop(context);
+          },
+          child: const Text('Lưu'),
+        ),
+      ],
+    );
+  }
+}
+// Ngày sinh
+
+// Đưa đoạn code này vào trong _ProfileScreenState như một phương thức:
+
+extension _ProfileScreenStateBirthdayDialog on _ProfileScreenState {
+  Future<void> showEditBirthdayDialog(BuildContext context) async {
+    DateTime? selectedDate = ngaysinh;
+    TextEditingController controller = TextEditingController(
+      text: '${ngaysinh.day}/${ngaysinh.month}/${ngaysinh.year}',
+    );
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Chỉnh sửa ngày sinh'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                readOnly: true,
+                keyboardType: TextInputType.datetime,
+                decoration: const InputDecoration(
+                  labelText: 'Nhập ngày (dd/mm/yyyy)',
+                ),
+                onChanged: (value) {
+                  try {
+                    final parts = value.split('/');
+                    if (parts.length == 3) {
+                      final day = int.parse(parts[0]);
+                      final month = int.parse(parts[1]);
+                      final year = int.parse(parts[2]);
+                      selectedDate = DateTime(year, month, day);
+                    }
+                  } catch (_) {}
+                },
+              ),
+              const SizedBox(height: 10),
+              ElevatedButton.icon(
+                icon: const Icon(Icons.calendar_today),
+                label: const Text('Chọn từ lịch'),
+                onPressed: () async {
+                  final date = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate ?? DateTime(2000, 1, 1),
+                    firstDate: DateTime(1900),
+                    lastDate: DateTime.now(),
+                  );
+                  if (date != null) {
+                    selectedDate = date;
+                    controller.text = '${date.day}/${date.month}/${date.year}';
+                  }
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context, selectedDate);
+              },
+              child: const Text('Lưu'),
+            ),
+          ],
+        );
+      },
+    ).then((value) {
+      if (value != null && value is DateTime) {
+        setState(() {
+          ngaysinh = value;
+        });
+      }
+    });
+  }
+}

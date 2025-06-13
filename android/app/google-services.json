@@ -37,6 +37,13 @@
             {
               "client_id": "438307077739-3l2odha99mh0pb2b3e87oqmrajo80iif.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "438307077739-u2pp4ghkpdjdtfpima90rbfmbvvl2pr4.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.luxeSilverApp"
+              }
             }
           ]
         }
