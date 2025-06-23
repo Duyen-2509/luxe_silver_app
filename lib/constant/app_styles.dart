@@ -5,4 +5,12 @@ class AppStyles {
   static OutlineInputBorder textFieldBorder = OutlineInputBorder(
     borderRadius: BorderRadius.all(Radius.circular(20)),
   );
+  static const TextStyle voucherTitle = TextStyle(
+    fontSize: 14,
+    fontWeight: FontWeight.bold,
+  );
+  static const TextStyle voucherContent = TextStyle(
+    fontSize: 10,
+    color: Colors.grey,
+  );
 }

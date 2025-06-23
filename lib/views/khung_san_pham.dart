@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:luxe_silver_app/controllers/product_data.dart';
-import '../models/product_model.dart';
+import '../models/sanPham_model.dart';
 
 class ProductCard extends StatelessWidget {
   final SanPham sanPham;
@@ -9,6 +8,7 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('ID: ${sanPham.idSp}, details: ${sanPham.details}');
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -25,7 +25,7 @@ class ProductCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Hình ảnh sản phẩm (dùng height cố định)
+          // Hình ảnh sản phẩm
           Container(
             height: 110,
             width: double.infinity,
@@ -39,18 +39,33 @@ class ProductCard extends StatelessWidget {
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(12),
               ),
-              child: Image.network(
-                sanPham.imageUrl,
-                fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    color: Colors.grey[100],
-                    child: Icon(Icons.image, size: 50, color: Colors.grey[400]),
-                  );
-                },
-              ),
+              child:
+                  sanPham.imageUrl != null
+                      ? Image.network(
+                        sanPham.imageUrl!,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[100],
+                            child: Icon(
+                              Icons.image,
+                              size: 50,
+                              color: Colors.grey[400],
+                            ),
+                          );
+                        },
+                      )
+                      : Container(
+                        color: Colors.grey[100],
+                        child: Icon(
+                          Icons.image,
+                          size: 50,
+                          color: Colors.grey[400],
+                        ),
+                      ),
             ),
           ),
+          const SizedBox(height: 10),
           // Thông tin sản phẩm
           Padding(
             padding: const EdgeInsets.all(12),
@@ -58,7 +73,7 @@ class ProductCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  sanPham.tenSp,
+                  sanPham.tensp,
                   style: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -68,41 +83,22 @@ class ProductCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
-                Builder(
-                  builder: (context) {
-                    final chiTietList = ProductData.getChiTietByIdSp(
-                      sanPham.idSp,
-                    );
-                    if (chiTietList.isNotEmpty) {
-                      final size = chiTietList.first;
-                      return Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          'Size: ${size.kichThuoc} ${size.donVi}',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      );
-                    } else {
-                      return const Padding(
-                        padding: EdgeInsets.only(top: 4),
-                        child: Text(
-                          'FreeSize',
-                          style: TextStyle(fontSize: 11, color: Colors.grey),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      );
-                    }
-                  },
-                ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 5),
+                // hiển thị giới tính
+                if (sanPham.gioitinh != null && sanPham.gioitinh!.isNotEmpty)
+                  Text(
+                    'Giới tính: ${sanPham.gioitinh}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Colors.blueGrey,
+                    ),
+                  ),
+                const SizedBox(height: 5),
+                // hiển thị giá
                 Text(
-                  sanPham.formattedPrice,
+                  sanPham.gia != null
+                      ? '${sanPham.gia!.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')} đ'
+                      : 'Liên hệ',
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,

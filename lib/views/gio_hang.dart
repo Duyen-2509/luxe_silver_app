@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:luxe_silver_app/constant/app_color.dart';
-import 'package:luxe_silver_app/controllers/product_data.dart';
-import 'package:luxe_silver_app/views/checkout.dart';
-import 'package:luxe_silver_app/views/product_detail.dart';
-import 'package:luxe_silver_app/views/profileScreen.dart';
+import 'package:luxe_silver_app/views/don_hang.dart';
+import '../models/sanPham_model.dart';
+import 'package:luxe_silver_app/views/thanh_toan.dart';
+import 'package:luxe_silver_app/views/chi_tiet_sp.dart';
+import 'package:luxe_silver_app/views/tai_khoan.dart';
 import 'package:luxe_silver_app/views/voucher_screen.dart';
-import '../models/product_model.dart';
 
 // Model cho mục trong giỏ hàng
 class CartItem {
@@ -15,8 +15,41 @@ class CartItem {
 
   CartItem({required this.sanPham, this.soLuong = 1, this.selectedSize});
 
-  // Tính tổng giá cho sản phẩm này
-  double get tongGia => double.parse(sanPham.gia) * soLuong;
+  Map<String, dynamic> toJson() => {
+    'sanPham': sanPham.toJson(),
+    'soLuong': soLuong,
+    'selectedSize': selectedSize,
+  };
+
+  factory CartItem.fromJson(Map<String, dynamic> json) => CartItem(
+    sanPham: SanPham.fromJson(json['sanPham']),
+    soLuong: json['soLuong'] ?? 1,
+    selectedSize: json['selectedSize'],
+  );
+
+  double get tongGia {
+    if (sanPham.details == null || sanPham.details!.isEmpty) return 0.0;
+    final detail =
+        selectedSize != null
+            ? sanPham.details!.firstWhere(
+              (d) => d.kichthuoc == selectedSize,
+              orElse: () => sanPham.details!.first,
+            )
+            : sanPham.details!.first;
+    return detail.gia * soLuong.toDouble();
+  }
+
+  int get giaDonVi {
+    if (sanPham.details == null || sanPham.details!.isEmpty) return 0;
+    final detail =
+        selectedSize != null
+            ? sanPham.details!.firstWhere(
+              (d) => d.kichthuoc == selectedSize,
+              orElse: () => sanPham.details!.first,
+            )
+            : sanPham.details!.first;
+    return detail.gia;
+  }
 }
 
 // Controller quản lý giỏ hàng (singleton)
@@ -25,30 +58,28 @@ class CartController extends ChangeNotifier {
   factory CartController() => _instance;
   CartController._internal();
 
-  List<CartItem> _cartItems = [];
+  final List<CartItem> _cartItems = [];
   List<CartItem> get cartItems => _cartItems;
 
-  // Tổng số lượng sản phẩm
   int get totalItems => _cartItems.fold(0, (sum, item) => sum + item.soLuong);
 
-  // Tổng tiền
   double get totalPrice =>
       _cartItems.fold(0.0, (sum, item) => sum + item.tongGia);
 
-  // Thêm sản phẩm vào giỏ hàng
-  void addToCart(SanPham sanPham, {String? size}) {
+  void addToCart(SanPham sanPham, {String? size, int quantity = 1}) {
     int existingIndex = _cartItems.indexWhere(
       (item) => item.sanPham.idSp == sanPham.idSp && item.selectedSize == size,
     );
     if (existingIndex >= 0) {
-      _cartItems[existingIndex].soLuong++;
+      _cartItems[existingIndex].soLuong += quantity;
     } else {
-      _cartItems.add(CartItem(sanPham: sanPham, selectedSize: size));
+      _cartItems.add(
+        CartItem(sanPham: sanPham, selectedSize: size, soLuong: quantity),
+      );
     }
     notifyListeners();
   }
 
-  // Xóa sản phẩm khỏi giỏ hàng
   void removeFromCart(int index) {
     if (index >= 0 && index < _cartItems.length) {
       _cartItems.removeAt(index);
@@ -56,7 +87,6 @@ class CartController extends ChangeNotifier {
     }
   }
 
-  // Cập nhật số lượng sản phẩm
   void updateQuantity(int index, int newQuantity) {
     if (index >= 0 && index < _cartItems.length && newQuantity > 0) {
       _cartItems[index].soLuong = newQuantity;
@@ -64,7 +94,6 @@ class CartController extends ChangeNotifier {
     }
   }
 
-  // Xóa tất cả sản phẩm trong giỏ hàng
   void clearCart() {
     _cartItems.clear();
     notifyListeners();
@@ -82,25 +111,34 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   final CartController cartController = CartController();
-  bool hasVoucher = false;
-  double voucherDiscount = 0.0;
-
-  @override
-  void initState() {
-    super.initState();
+  String _getDonVi(CartItem item) {
+    if (item.sanPham.details == null) return '';
+    final detail = item.sanPham.details!.firstWhere(
+      (d) => d.kichthuoc.toString() == item.selectedSize,
+      orElse: () => item.sanPham.details!.first,
+    );
+    return detail.kichthuoc == 0 ? '' : detail.donvi;
   }
 
   String formatPrice(double price) {
     return '${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} vnđ';
   }
 
-  int _selectedIndex = 1; // Tab giỏ hàng đang được chọn
+  int _selectedIndex = 1;
 
   void _onItemTapped(int index) {
     if (index == 0) {
       Navigator.popUntil(context, (route) => route.isFirst);
     } else if (index == 1) {
       // Đang ở giỏ hàng, không làm gì
+    } else if (index == 2) {
+      Navigator.popUntil(context, (route) => route.isFirst);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => DonHangScreen(userData: widget.userData),
+        ),
+      );
     } else if (index == 3) {
       Navigator.popUntil(context, (route) => route.isFirst);
       Navigator.push(
@@ -148,10 +186,7 @@ class _CartScreenState extends State<CartScreen> {
                       },
                     ),
           ),
-          if (cartController.cartItems.isNotEmpty) ...[
-            _buildVoucherSection(),
-            _buildBottomSection(),
-          ],
+          if (cartController.cartItems.isNotEmpty) ...[_buildBottomSection()],
         ],
       ),
       bottomNavigationBar: Container(
@@ -171,7 +206,7 @@ class _CartScreenState extends State<CartScreen> {
           backgroundColor: AppColors.bottomNavBackground,
           selectedItemColor: AppColors.bottomNavSelected,
           unselectedItemColor: AppColors.bottomNavUnselected,
-          currentIndex: 1,
+          currentIndex: _selectedIndex,
           onTap: _onItemTapped,
           items: const [
             BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
@@ -264,10 +299,8 @@ class _CartScreenState extends State<CartScreen> {
                 MaterialPageRoute(
                   builder:
                       (context) => ProductDetailScreen(
-                        userData:
-                            widget
-                                .userData, // or another variable holding user data
-                        productId: item.sanPham.idSp.toString(),
+                        userData: widget.userData,
+                        productId: item.sanPham.idSp,
                       ),
                 ),
               );
@@ -281,16 +314,28 @@ class _CartScreenState extends State<CartScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  item.sanPham.inhManh,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.image, color: Colors.grey),
-                    );
-                  },
-                ),
+                child:
+                    item.sanPham.imageUrl != null
+                        ? Image.network(
+                          item.sanPham.imageUrl!,
+                          width: 60,
+                          height: 60,
+                          fit: BoxFit.cover,
+                        )
+                        : (item.sanPham.images != null &&
+                                item.sanPham.images!.isNotEmpty
+                            ? Image.network(
+                              item.sanPham.images!.first,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                            )
+                            : Container(
+                              color: Colors.grey[100],
+                              width: 60,
+                              height: 60,
+                              child: Icon(Icons.image, color: Colors.grey[400]),
+                            )),
               ),
             ),
           ),
@@ -302,7 +347,7 @@ class _CartScreenState extends State<CartScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.sanPham.tenSp,
+                  item.sanPham.tensp,
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -311,9 +356,10 @@ class _CartScreenState extends State<CartScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
+
                 if (item.selectedSize != null)
                   Text(
-                    'Size: ${item.selectedSize}',
+                    'Size: ${item.selectedSize == '0' ? 'Freesize' : '${item.selectedSize} ${_getDonVi(item)}'}',
                     style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                   ),
                 const SizedBox(height: 4),
@@ -330,8 +376,8 @@ class _CartScreenState extends State<CartScreen> {
                     const SizedBox(width: 10),
                     // Nút giảm
                     Container(
-                      width: 16,
-                      height: 16,
+                      width: 24,
+                      height: 24,
                       margin: const EdgeInsets.symmetric(horizontal: 2),
                       decoration: const BoxDecoration(
                         color: Colors.grey,
@@ -361,8 +407,8 @@ class _CartScreenState extends State<CartScreen> {
                     const SizedBox(width: 5),
                     // Nút tăng
                     Container(
-                      width: 16,
-                      height: 16,
+                      width: 24,
+                      height: 24,
                       margin: const EdgeInsets.symmetric(horizontal: 2),
                       decoration: const BoxDecoration(
                         color: Colors.grey,
@@ -374,13 +420,34 @@ class _CartScreenState extends State<CartScreen> {
                           color: Colors.white,
                           size: 16,
                         ),
+                        // Kiểm tra số lượng tối đa
                         onPressed: () {
-                          setState(() {
-                            cartController.updateQuantity(
-                              index,
-                              item.soLuong + 1,
+                          final detail =
+                              item.sanPham.details != null &&
+                                      item.sanPham.details!.isNotEmpty
+                                  ? (item.selectedSize != null
+                                      ? item.sanPham.details!.firstWhere(
+                                        (d) => d.kichthuoc == item.selectedSize,
+                                        orElse:
+                                            () => item.sanPham.details!.first,
+                                      )
+                                      : item.sanPham.details!.first)
+                                  : null;
+                          final maxQty = detail?.soluongKho ?? 1;
+                          if (item.soLuong < maxQty) {
+                            setState(() {
+                              cartController.updateQuantity(
+                                index,
+                                item.soLuong + 1,
+                              );
+                            });
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Vượt quá số lượng trong kho!'),
+                              ),
                             );
-                          });
+                          }
                         },
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
@@ -390,7 +457,7 @@ class _CartScreenState extends State<CartScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  formatPrice(double.parse(item.sanPham.gia)),
+                  formatPrice(item.giaDonVi.toDouble()),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -415,80 +482,12 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _buildVoucherSection() {
-    return InkWell(
-      onTap: () async {
-        final selectedVoucher = await Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => VoucherScreen()),
-        );
-        if (selectedVoucher != null) {
-          setState(() {
-            hasVoucher = true;
-            // Áp dụng giảm giá theo loại voucher
-            if (selectedVoucher.idLoaiVoucher == 1) {
-              // Giảm phần trăm
-              voucherDiscount =
-                  cartController.totalPrice * (selectedVoucher.giatriMin / 100);
-              if (selectedVoucher.giatriMax > 0 &&
-                  voucherDiscount > selectedVoucher.giatriMax) {
-                voucherDiscount = selectedVoucher.giatriMax;
-              }
-            } else {
-              // Giảm tiền mặt
-              voucherDiscount = selectedVoucher.giatriMin;
-            }
-          });
-        }
-      },
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 5,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: Colors.black,
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: const Icon(
-                Icons.local_offer,
-                color: Colors.white,
-                size: 16,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                hasVoucher ? 'Đã áp dụng voucher' : 'Voucher',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            const Icon(Icons.chevron_right, color: Colors.grey),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildBottomSection() {
-    final totalPrice = cartController.totalPrice - voucherDiscount;
+    final totalPrice = cartController.totalPrice;
+
+    // Dummy voucher logic for demonstration; replace with your actual logic
+    final bool hasVoucher = false;
+    final double voucherDiscount = 0.0;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -503,32 +502,69 @@ class _CartScreenState extends State<CartScreen> {
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            formatPrice(totalPrice),
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const CheckoutScreen()),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.black,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
+          if (hasVoucher)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Giảm giá:',
+                  style: TextStyle(fontSize: 16, color: Colors.green),
+                ),
+                Text(
+                  '-${formatPrice(voucherDiscount)}',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                formatPrice(totalPrice),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            child: const Text(
-              'Thanh toán',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder:
+                          (context) => CheckoutScreen(
+                            cartTotal:
+                                cartController
+                                    .totalPrice, // truyền tổng tiền giỏ hàng
+                            userData: widget.userData, // truyền thông tin user
+                          ),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Thanh toán',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+              ),
+            ],
           ),
         ],
       ),

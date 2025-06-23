@@ -19,6 +19,8 @@ class AuthRepository {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'sodienthoai': phone, 'password': password}),
       );
+      print(response.body);
+      print('Số điện thoại gửi lên: $phone'); // In ra số điện thoại
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -47,11 +49,23 @@ class AuthRepository {
           'password': password,
         }),
       );
-      if (response.statusCode == 201) {
-        return json.decode(response.body);
+      // Luôn thử decode JSON, nếu lỗi thì trả về lỗi mặc định
+      Map<String, dynamic>? data;
+      try {
+        data = json.decode(response.body);
+      } catch (_) {
+        data = null;
+      }
+      if (response.statusCode == 201 && data != null && data['id'] != null) {
+        return data;
       } else {
-        final errorData = json.decode(response.body);
-        return {'error': errorData['message'] ?? 'Đăng ký thất bại'};
+        // Trả về thông báo lỗi từ backend nếu có, nếu không thì trả về lỗi mặc định
+        return {
+          'error':
+              data != null && data['message'] != null
+                  ? data['message']
+                  : 'Số điện đã tồn tại',
+        };
       }
     } catch (e) {
       return {'error': 'Không thể kết nối đến server'};

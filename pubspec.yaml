@@ -29,6 +29,11 @@ dependencies:
   firebase_analytics: ^11.4.4
   google_sign_in: ^6.3.0
   cupertino_icons: ^1.0.8
+  image_picker: ^1.0.4
+  url_launcher: ^6.2.6
+  shared_preferences: ^2.2.2
+  flutter_stripe: ^9.5.0
+
   # Package để format số tiền theo định dạng Việt Nam
   intl: ^0.18.1
   # Package để gọi HTTP API
@@ -43,6 +48,12 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/logo_icon.png"
 
 flutter:
   uses-material-design: true
@@ -65,12 +76,12 @@ flutter:
   # "family" key with the font family name, and a "fonts" key with a
   # list giving the asset and other descriptors for the font. For
   # example:
-  fonts:
-    - family: Roboto
-      fonts:
-        - asset: assets/fonts/Roboto-Regular.ttf
-        - asset: assets/fonts/Roboto-Bold.ttf
-          weight: 700
+  # fonts:
+  #   - family: Roboto
+  #     fonts:
+  #       - asset: assets/fonts/Roboto-Regular.ttf
+  #       - asset: assets/fonts/Roboto-Bold.ttf
+  #         weight: 700
   #     fonts:
   #       - asset: fonts/Schyler-Regular.ttf
   #       - asset: fonts/Schyler-Italic.ttf

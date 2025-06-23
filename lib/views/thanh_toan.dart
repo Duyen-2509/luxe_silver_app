@@ -1,0 +1,678 @@
+import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/models/sanPham_model.dart';
+import 'package:luxe_silver_app/views/dia_chi_nhanhang.dart';
+import 'package:luxe_silver_app/views/don_hang.dart';
+import 'package:luxe_silver_app/views/gio_hang.dart';
+import 'package:luxe_silver_app/views/stripe_payment_screen.dart';
+import 'package:luxe_silver_app/views/voucher_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:math';
+import 'package:luxe_silver_app/controllers/hoadon_controller.dart';
+
+class CheckoutScreen extends StatefulWidget {
+  final SanPham? product;
+  final int? quantity;
+  final String? selectedSize;
+  final double cartTotal;
+  final Map<String, dynamic> userData;
+
+  const CheckoutScreen({
+    Key? key,
+    required this.cartTotal,
+    required this.userData,
+    this.product,
+    this.quantity,
+    this.selectedSize,
+  }) : super(key: key);
+
+  @override
+  State<CheckoutScreen> createState() => _CheckoutScreenState();
+}
+
+class _CheckoutScreenState extends State<CheckoutScreen> {
+  final CartController cartController = CartController();
+  Map<String, dynamic>? selectedVoucher;
+  double voucherDiscount = 0.0;
+  String? shippingName;
+  String? shippingAddress;
+  String paymentMethod = 'cod'; // 'cod' = tiền mặt,
+  String formatPrice(double price) {
+    return '${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} vnđ';
+  }
+
+  // Hàm tạo mã hóa đơn ngẫu nhiên
+  String generateRandomMaHD([int length = 6]) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    final rand = Random();
+    return List.generate(
+      length,
+      (index) => chars[rand.nextInt(chars.length)],
+    ).join();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadShippingInfo();
+  }
+
+  Future<void> _loadShippingInfo() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId =
+        widget.userData['id']?.toString() ?? widget.userData['email'] ?? '';
+    if (!mounted) return;
+    setState(() {
+      shippingName = prefs.getString('shippingName_$userId');
+      shippingAddress = prefs.getString('shippingAddress_$userId');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final shippingFee = 30000.0;
+    final totalVoucher = voucherDiscount;
+    final bool isBuyNow = widget.product != null;
+    final items =
+        isBuyNow
+            ? [
+              {
+                'sanPham': widget.product!,
+                'soLuong': widget.quantity ?? 1,
+                'selectedSize': widget.selectedSize,
+                'giaDonVi':
+                    widget.product!.details != null &&
+                            widget.product!.details!.isNotEmpty
+                        ? widget.product!.details!.first.gia
+                        : 0,
+              },
+            ]
+            : cartController.cartItems;
+
+    final totalProduct =
+        isBuyNow
+            ? ((items[0] as Map<String, dynamic>)['giaDonVi'] as int) *
+                ((items[0] as Map<String, dynamic>)['soLuong'] as int)
+            : cartController.totalPrice;
+
+    final totalPayment = totalProduct + shippingFee - totalVoucher;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Thanh toán',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        centerTitle: false,
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Địa chỉ nhận hàng
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[50],
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          size: 20,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                // Hiển thị tên người nhận: ưu tiên tên mới, nếu chưa có thì lấy tên user
+                                'Người nhận: ${shippingName ?? widget.userData['ten']}',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                // Hiển thị địa chỉ nhận hàng: ưu tiên địa chỉ mới, nếu chưa có thì lấy địa chỉ user
+                                'Địa chỉ: ${shippingAddress ?? widget.userData['diachi']}',
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.chevron_right),
+                          onPressed: () async {
+                            final result = await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => DiaChiNhanHangScreen(
+                                      currentName: '',
+                                      currentAddress: '',
+                                    ),
+                              ),
+                            );
+                            if (result != null &&
+                                result is Map<String, String>) {
+                              if (!mounted) return;
+                              setState(() {
+                                shippingName = result['name'];
+                                shippingAddress = result['address'];
+                              });
+                              final prefs =
+                                  await SharedPreferences.getInstance();
+                              final userId =
+                                  widget.userData['id']?.toString() ??
+                                  widget.userData['email'] ??
+                                  '';
+                              await prefs.setString(
+                                'shippingName_$userId',
+                                shippingName!,
+                              );
+                              await prefs.setString(
+                                'shippingAddress_$userId',
+                                shippingAddress!,
+                              );
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Danh sách sản phẩm
+                  ...items.map((item) {
+                    final sanPham =
+                        isBuyNow
+                            ? (item as Map<String, dynamic>)['sanPham']
+                                as SanPham
+                            : (item as CartItem).sanPham;
+                    final soLuong =
+                        isBuyNow
+                            ? (item as Map<String, dynamic>)['soLuong'] as int
+                            : (item as CartItem).soLuong;
+                    final selectedSize =
+                        isBuyNow
+                            ? (item as Map<String, dynamic>)['selectedSize']
+                            : (item as CartItem).selectedSize;
+                    final giaDonVi =
+                        isBuyNow
+                            ? (item as Map<String, dynamic>)['giaDonVi'] as int
+                            : (item as CartItem).giaDonVi;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildProductItem(
+                        sanPham.tensp,
+                        selectedSize == null
+                            ? ''
+                            : 'Size: ${selectedSize == '0' ? 'Freesize' : selectedSize}',
+                        soLuong,
+                        formatPrice(giaDonVi.toDouble()),
+                        sanPham.imageUrl ??
+                            (sanPham.images != null &&
+                                    sanPham.images!.isNotEmpty
+                                ? sanPham.images!.first
+                                : ''),
+                      ),
+                    );
+                  }),
+
+                  const SizedBox(height: 20),
+
+                  // Phương thức thanh toán
+                  InkWell(
+                    onTap: () async {
+                      final selected = await showDialog<String>(
+                        context: context,
+                        builder:
+                            (context) => AlertDialog(
+                              title: const Text('Chọn phương thức thanh toán'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ListTile(
+                                    leading: Icon(Icons.money),
+                                    title: Text('Thanh toán khi nhận hàng'),
+                                    onTap: () => Navigator.pop(context, 'cod'),
+                                  ),
+                                  SizedBox(height: 12),
+                                  ListTile(
+                                    leading: Icon(Icons.qr_code),
+                                    title: Text('Thanh toán qua Stripe'),
+                                    onTap:
+                                        () => Navigator.pop(context, 'stripe'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                      );
+                      if (selected != null && selected != paymentMethod) {
+                        setState(() {
+                          paymentMethod = selected;
+                        });
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Phương thức thanh toán',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                Text(
+                                  paymentMethod == 'cod'
+                                      ? 'Thanh toán khi nhận hàng'
+                                      : 'Thanh toán qua Stripe',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Colors.grey,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Voucher section
+                  InkWell(
+                    onTap: () async {
+                      final voucher = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => VoucherScreen(
+                                cartTotal: widget.cartTotal,
+                                userData: widget.userData,
+                                selectedVoucher: selectedVoucher,
+                              ),
+                        ),
+                      );
+
+                      // Luôn cập nhật lại selectedVoucher và voucherDiscount, kể cả khi voucher == null
+                      setState(() {
+                        selectedVoucher = voucher;
+                        if (voucher != null) {
+                          final double value =
+                              double.tryParse(
+                                voucher['sotiengiam'].toString(),
+                              ) ??
+                              0.0;
+                          if (value > 0 && value < 1) {
+                            voucherDiscount = widget.cartTotal * value;
+                          } else {
+                            voucherDiscount = value;
+                          }
+                        } else {
+                          voucherDiscount = 0.0;
+                        }
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 5,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.local_offer, color: Colors.black),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              selectedVoucher != null
+                                  ? 'Đã áp dụng voucher: ${selectedVoucher!['ten']}'
+                                  : 'Chọn voucher',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right, color: Colors.grey),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Chi tiết thanh toán
+                  const Text(
+                    'Chi tiết thanh toán',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 12),
+
+                  _buildSummaryRow(
+                    'Tổng tiền hàng',
+                    formatPrice(totalProduct.toDouble()),
+                  ),
+                  _buildSummaryRow(
+                    'Tổng phí vận chuyển',
+                    formatPrice(shippingFee),
+                  ),
+                  _buildSummaryRow(
+                    'Tổng voucher',
+                    '-${formatPrice(totalVoucher)}',
+                  ),
+
+                  const Divider(height: 30),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        formatPrice(totalPayment),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Nút thanh toán
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.grey.withOpacity(0.2),
+                  spreadRadius: 1,
+                  blurRadius: 5,
+                  offset: const Offset(0, -3),
+                ),
+              ],
+            ),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () async {
+                  //               if (paymentMethod == 'stripe') {
+                  //   // Chuyển sang màn hình thanh toán Stripe
+                  //   Navigator.push(
+                  //     context,
+                  //     MaterialPageRoute(
+                  //       builder: (context) => StripePaymentScreen(
+                  //         // truyền các tham số cần thiết nếu có
+                  //       ),
+                  //     ),
+                  //   );
+                  // } else {
+                  //   // Xử lý thanh toán khi nhận hàng (COD) ở đây
+                  // }
+                  // 1. Tạo mã hóa đơn ngẫu nhiên
+                  final mahd = generateRandomMaHD(6);
+                  // 2. Chuẩn bị dữ liệu hóa đơn
+                  // Lấy userId và các thông tin cần thiết
+                  final userId = widget.userData['id']?.toString() ?? '';
+                  final tenNguoiNhan = shippingName ?? widget.userData['ten'];
+                  final diaChi = shippingAddress ?? widget.userData['diachi'];
+                  final diaChiFull = '$tenNguoiNhan - $diaChi';
+                  final phuongThuc =
+                      paymentMethod == 'cod'
+                          ? 'Thanh toán khi nhận hàng'
+                          : 'Thanh toán qua Stripe';
+                  // Chuẩn bị danh sách chi tiết hóa đơn
+                  final List chitiet =
+                      (widget.product != null)
+                          ? [
+                            {
+                              'id_sp': widget.product!.idSp,
+                              'id_ctsp':
+                                  widget.product!.details != null &&
+                                          widget.product!.details!.isNotEmpty
+                                      ? widget.product!.details!.first.idCtsp
+                                      : null, // <-- phải có id_ctsp
+                              'soluong': widget.quantity ?? 1,
+                              'gia':
+                                  widget.product!.details != null &&
+                                          widget.product!.details!.isNotEmpty
+                                      ? widget.product!.details!.first.gia
+                                      : 0,
+                            },
+                          ]
+                          : cartController.cartItems
+                              .map(
+                                (item) => {
+                                  'id_sp': item.sanPham.idSp,
+                                  'id_ctsp':
+                                      item.sanPham.details != null &&
+                                              item.sanPham.details!.isNotEmpty
+                                          ? item.sanPham.details!.first.idCtsp
+                                          : null, // <-- phải có id_ctsp
+                                  'soluong': item.soLuong,
+                                  'gia': item.giaDonVi,
+                                },
+                              )
+                              .toList();
+
+                  // Chuẩn bị dữ liệu gửi lên API
+                  final hoadonData = {
+                    'id_kh': int.tryParse(userId) ?? 0,
+
+                    'tong_gia_sp': totalProduct.round(),
+                    'tonggia': totalPayment.round(),
+                    'tien_ship': 30000,
+                    'id_voucher':
+                        selectedVoucher != null
+                            ? selectedVoucher!['id_voucher']
+                            : null,
+                    'diachi': diaChiFull,
+                    'phuongthuc_thanhtoan': phuongThuc,
+                    'chitiet': chitiet,
+                  };
+                  // Nếu không có voucher thì xóa trường id_voucher để tránh lỗi validate
+                  if (hoadonData['id_voucher'] == null) {
+                    hoadonData.remove('id_voucher');
+                  }
+                  print('Dữ liệu gửi lên API################: $hoadonData');
+                  // 3. Lưu hóa đơn lên SQL
+                  try {
+                    final hoaDonController = HoaDonController();
+                    await hoaDonController.addHoaDon(hoadonData);
+                    // XÓA GIỎ HÀNG SAU KHI THANH TOÁN
+                    cartController.clearCart();
+                    // 4. Chuyển sang trang Đơn hàng
+                    if (!mounted) return;
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) =>
+                                DonHangScreen(userData: widget.userData),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Lỗi tạo hóa đơn: $e')),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  'Thanh toán',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductItem(
+    String name,
+    String size,
+    int quantity,
+    String price,
+    String imageUrl,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.grey[200],
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child:
+                  imageUrl.isNotEmpty
+                      ? Image.network(
+                        imageUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[200],
+                            child: Icon(
+                              Icons.image,
+                              color: Colors.grey[400],
+                              size: 30,
+                            ),
+                          );
+                        },
+                      )
+                      : Container(
+                        color: Colors.grey[200],
+                        child: Icon(
+                          Icons.image,
+                          color: Colors.grey[400],
+                          size: 30,
+                        ),
+                      ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  size,
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Số lượng: $quantity',
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  price,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> clearShippingInfo(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('shippingName_$userId');
+    await prefs.remove('shippingAddress_$userId');
+  }
+}

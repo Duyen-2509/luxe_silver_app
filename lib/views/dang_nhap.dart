@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:luxe_silver_app/views/forgotPassword.dart';
-import 'package:luxe_silver_app/views/home_screen.dart';
+import 'package:luxe_silver_app/views/quen_mk.dart';
+import 'package:luxe_silver_app/views/trang_chu.dart';
 import '../controllers/login_controller.dart';
 import '../constant/app_color.dart';
 import '../constant/app_styles.dart';
 import '../constant/image.dart';
+import '../services/auth_storage.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -90,6 +91,15 @@ class _LoginScreenState extends State<LoginScreen> {
                   );
 
                   if (userData != null) {
+                    // Nếu là nhân viên hoặc admin, gán id_nv cho userData
+                    if (userData['role'] == 'admin' ||
+                        userData['role'] == 'nhan_vien') {
+                      userData['id_nv'] = userData['id_nv'] ?? userData['id'];
+                    }
+
+                    // Lưu token vào bộ nhớ
+                    // await AuthStorage.saveToken(userData['token']);
+
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
@@ -124,6 +134,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 onPressed: () async {
                   final userData = await loginController.loginWithGoogle();
                   if (userData != null) {
+                    // Lưu token Google vào bộ nhớ
+                    //await AuthStorage.saveToken(userData['token']);
+
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(

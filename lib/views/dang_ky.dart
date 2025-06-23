@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:luxe_silver_app/views/home_screen.dart';
+import 'package:luxe_silver_app/views/trang_chu.dart';
 import '../constant/app_color.dart';
 import '../constant/app_styles.dart';
 import '../constant/image.dart';
@@ -32,6 +32,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   bool _obscureConfirmPassword = true;
 
   // Biến lưu lỗi để hiển thị dưới ô nhập
+  String? nameError;
+  String? phoneError;
   String? passwordError;
   String? confirmPasswordError;
 
@@ -39,6 +41,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
   void _signUp(BuildContext context) async {
     // Reset lỗi trước khi kiểm tra
     setState(() {
+      nameError = null;
+      phoneError = null;
       passwordError = null;
       confirmPasswordError = null;
     });
@@ -48,20 +52,45 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final phone = phoneController.text.trim();
     final password = passwordController.text;
     final confirmPassword = confirmPasswordController.text;
-
+    bool hasError = false;
     // Kiểm tra các ô không được để trống
-    if (name.isEmpty ||
-        phone.isEmpty ||
-        password.isEmpty ||
-        confirmPassword.isEmpty) {
+    if (name.isEmpty) {
+      nameError = 'Vui lòng nhập họ tên!';
+      hasError = true;
+    }
+    if (phone.isEmpty) {
+      phoneError = 'Vui lòng nhập số điện thoại!';
+      hasError = true;
+    } else if (!validator.phoneValidator(phone)) {
+      phoneError = 'Số điện thoại không hợp lệ!';
+      hasError = true;
+    }
+    if (password.isEmpty) {
+      passwordError = 'Vui lòng nhập mật khẩu!';
+      hasError = true;
+    } else if (!validator.isValid(password)) {
+      passwordError = 'Mật khẩu phải ít nhất 8 ký tự và có ký tự đặc biệt!';
+      hasError = true;
+    }
+    if (confirmPassword.isEmpty) {
+      confirmPasswordError = 'Vui lòng nhập lại mật khẩu!';
+      hasError = true;
+    } else if (password != confirmPassword) {
+      confirmPasswordError = 'Nhập lại mật khẩu không khớp!';
+      hasError = true;
+    }
+    setState(() {});
+    if (hasError) return;
+    // Thêm kiểm tra số điện thoại hợp lệ
+    if (!validator.phoneValidator(phone)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập đầy đủ thông tin!')),
+        const SnackBar(content: Text('Số điện thoại không hợp lệ!')),
       );
       return;
     }
 
     // Kiểm tra điều kiện mật khẩu
-    if (!PasswordValidator.isValid(password)) {
+    if (!validator.isValid(password)) {
       setState(() {
         passwordError = 'Mật khẩu phải ít nhất 8 ký tự và có ký tự đặc biệt!';
       });
@@ -125,6 +154,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   prefixIcon: const Icon(Icons.person),
                   labelText: 'Họ tên',
                   border: AppStyles.textFieldBorder,
+                  errorText: nameError,
                 ),
               ),
               const SizedBox(height: 16),
@@ -136,6 +166,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   prefixIcon: const Icon(Icons.phone),
                   labelText: 'Số điện thoại',
                   border: AppStyles.textFieldBorder,
+                  errorText: phoneError,
                 ),
               ),
               const SizedBox(height: 16),
@@ -147,7 +178,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   prefixIcon: const Icon(Icons.lock),
                   labelText: 'Mật khẩu',
                   border: AppStyles.textFieldBorder,
-                  errorText: passwordError, // Hiển thị lỗi ở đây
+                  errorText: passwordError,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscurePassword
@@ -171,7 +202,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   prefixIcon: const Icon(Icons.lock_outline),
                   labelText: 'Nhập lại mật khẩu',
                   border: AppStyles.textFieldBorder,
-                  errorText: confirmPasswordError, // Hiển thị lỗi ở đây
+                  errorText: confirmPasswordError,
                   suffixIcon: IconButton(
                     icon: Icon(
                       _obscureConfirmPassword

@@ -4,8 +4,10 @@ import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/constant/dieukien%20.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:luxe_silver_app/controllers/user_controller.dart';
+import 'package:luxe_silver_app/repository/user_repository.dart';
+import 'package:luxe_silver_app/services/api_service.dart';
 import '../services/vietnam_location_api.dart';
-
 import '../constant/image.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -17,6 +19,7 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
+  // Các biến lưu thông tin cá nhân
   late String name;
   late String sdt;
   late String email;
@@ -25,9 +28,83 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late String gioitinh;
   late String role;
   late double diem;
+
+  // Hàm lấy id khách hàng an toàn
+  int? get idKh {
+    final idKhRaw = widget.userData['id_kh'] ?? widget.userData['id'];
+    return idKhRaw is int ? idKhRaw : int.tryParse(idKhRaw?.toString() ?? '');
+  }
+
+  // Hàm cập nhật profile lên server
+  Future<void> updateProfileOnServer(
+    Map<String, dynamic> data,
+    String successMsg,
+    String failMsg,
+  ) async {
+    if (idKh == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Không tìm thấy ID khách hàng!')),
+      );
+      return;
+    }
+    final apiService = ApiService();
+    final userRepository = UserRepository(apiService);
+    final userController = UserController(userRepository);
+    final success = await userController.updateProfile(
+      idKh: idKh!,
+      ten: data['ten'],
+      sodienthoai: data['sodienthoai'],
+      email: data['email'],
+      diachi: data['diachi'],
+      ngaysinh: data['ngaysinh'],
+      gioitinh: data['gioitinh'],
+      password: data['password'],
+    );
+    if (success) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(successMsg)));
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(failMsg)));
+    }
+  }
+
+  Future<void> reloadUserData() async {
+    final apiService = ApiService();
+    final userRepository = UserRepository(apiService);
+    final userController = UserController(userRepository);
+
+    // hàm getUserById trong userController
+    final user = await userController.getUserById(idKh!);
+    if (user != null) {
+      setState(() {
+        name = user['ten'] ?? '';
+        sdt = user['sodienthoai'] ?? '';
+        email = user['email'] ?? '';
+        dc = user['diachi'] ?? '';
+        ngaysinh =
+            DateTime.tryParse(user['ngaysinh'] ?? '') ?? DateTime(2000, 1, 1);
+        gioitinh = user['gioitinh'] ?? '';
+        diem =
+            user['diem'] != null
+                ? (user['diem'] is int
+                    ? (user['diem'] as int).toDouble()
+                    : double.tryParse(user['diem'].toString()) ?? 0)
+                : 0;
+        widget.userData.clear();
+        widget.userData.addAll(user);
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    print(
+      'Thông tin truyền vào ProfileScreen: ${widget.userData}',
+    ); // In ra dữ liệu
     // Lấy dữ liệu từ userData
     name = widget.userData['ten'] ?? '';
     sdt = widget.userData['sodienthoai'] ?? '';
@@ -47,10 +124,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
       diem = double.tryParse(rawDiem) ?? 0;
     } else {
       diem = 0;
-    } // Ép kiểu an toàn
-    //print('userData: ${widget.userData}');
+    }
+    // Sửa tại đây: chỉ reload nếu là khách hàng
+    if (role == 'khach_hang') {
+      reloadUserData();
+    }
   }
 
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
@@ -64,14 +145,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
+              // Ảnh đại diện
               Container(
                 width: 100,
                 height: 100,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.black, // Viền đen
-                  ),
+                  border: Border.all(color: Colors.black),
                 ),
                 child: CircleAvatar(
                   radius: 50,
@@ -85,12 +165,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              if (role == 'khach_hang')
+              if (role.trim().toLowerCase() == 'khach_hang')
                 Text(
                   '${diem.toStringAsFixed(3)} điểm',
-                  style: const TextStyle(fontSize: 16),
+                  style: const TextStyle(fontSize: 16, color: Colors.pink),
+                )
+              else if (role.trim().toLowerCase() == 'admin')
+                Text(
+                  'Admin',
+                  style: const TextStyle(fontSize: 16, color: Colors.pink),
+                )
+              else if (role.trim().toLowerCase() == 'nhan_vien')
+                Text(
+                  'Nhân viên',
+                  style: const TextStyle(fontSize: 16, color: Colors.pink),
                 ),
+
               const SizedBox(height: 20),
+
               // Họ tên
               ListTile(
                 leading: const Icon(Icons.person),
@@ -99,66 +191,99 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 trailing: IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () {
-                    showNameDialog(context, name, (newName) {
+                    showNameDialog(context, name, (newName) async {
                       setState(() {
                         name = newName;
                       });
+                      await updateProfileOnServer(
+                        {'ten': newName},
+                        'Cập nhật tên thành công!',
+                        'Cập nhật tên thất bại!',
+                      );
+                      await reloadUserData();
                     });
                   },
                 ),
               ),
               const Divider(),
+
               // Số điện thoại
-              ListTile(
-                leading: const Icon(Icons.phone),
-                title: const Text('Số điện thoại'),
-                subtitle: Text(sdt),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    showPhoneDialog(context, sdt, (newPhone) {
-                      setState(() {
-                        sdt = newPhone;
+              if (role.trim().toLowerCase() != 'admin') ...[
+                ListTile(
+                  leading: const Icon(Icons.phone),
+                  title: const Text('Số điện thoại'),
+                  subtitle: Text(sdt),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () {
+                      showPhoneDialog(context, sdt, (newPhone) async {
+                        setState(() {
+                          sdt = newPhone;
+                        });
+                        await updateProfileOnServer(
+                          {'sodienthoai': newPhone},
+                          'Cập nhật số điện thoại thành công!',
+                          'Cập nhật số điện thoại thất bại!',
+                        );
+                        await reloadUserData();
                       });
-                    });
-                  },
+                    },
+                  ),
                 ),
-              ),
-              const Divider(),
+                const Divider(),
+              ],
+
               // Email
-              ListTile(
-                leading: const Icon(Icons.email),
-                title: const Text('Email'),
-                subtitle: Text(email),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    showEmailDialog(context, email, (newEmail) {
-                      setState(() {
-                        email = newEmail;
+              if ((role.trim().toLowerCase() != 'admin') &&
+                  (role.trim().toLowerCase() != 'nhan_vien')) ...[
+                ListTile(
+                  leading: const Icon(Icons.email),
+                  title: const Text('Email'),
+                  subtitle: Text(email),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () {
+                      showEmailDialog(context, email, (newEmail) async {
+                        setState(() {
+                          email = newEmail;
+                        });
+                        await updateProfileOnServer(
+                          {'email': newEmail},
+                          'Cập nhật email thành công!',
+                          'Cập nhật email thất bại!',
+                        );
+                        await reloadUserData();
                       });
-                    });
-                  },
+                    },
+                  ),
                 ),
-              ),
-              const Divider(),
-              // Dia chỉ
+                const Divider(),
+              ],
+
+              // Địa chỉ
               ListTile(
-                leading: Icon(Icons.map),
-                title: Text('Địa chỉ'),
-                subtitle: Text('$dc'),
+                leading: const Icon(Icons.map),
+                title: const Text('Địa chỉ'),
+                subtitle: Text(dc),
                 trailing: IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () {
-                    showAddressDialog(context, dc, (newAddress) {
+                    showAddressDialog(context, dc, (newAddress) async {
                       setState(() {
                         dc = newAddress;
                       });
+                      await updateProfileOnServer(
+                        {'diachi': newAddress},
+                        'Cập nhật địa chỉ thành công!',
+                        'Cập nhật địa chỉ thất bại!',
+                      );
+                      await reloadUserData();
                     });
                   },
                 ),
               ),
               const Divider(),
+
               // Ngày sinh
               ListTile(
                 leading: const Icon(Icons.cake),
@@ -170,11 +295,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   icon: const Icon(Icons.edit),
                   onPressed: () async {
                     await showEditBirthdayDialog(context);
+                    await updateProfileOnServer(
+                      {
+                        'ngaysinh':
+                            '${ngaysinh.year}-${ngaysinh.month.toString().padLeft(2, '0')}-${ngaysinh.day.toString().padLeft(2, '0')}',
+                      },
+                      'Cập nhật ngày sinh thành công!',
+                      'Cập nhật ngày sinh thất bại!',
+                    );
+                    await reloadUserData();
                   },
                 ),
               ),
               const Divider(),
-              //Giới tính
+
+              // Giới tính
               ListTile(
                 leading: const Icon(Icons.wc),
                 title: const Text('Giới tính'),
@@ -182,29 +317,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 trailing: IconButton(
                   icon: const Icon(Icons.edit),
                   onPressed: () {
-                    showGenderDialog(context, gioitinh);
+                    showGenderDialog(context, gioitinh, (newGender) async {
+                      setState(() {
+                        gioitinh = newGender;
+                      });
+                      await updateProfileOnServer(
+                        {'gioitinh': newGender},
+                        'Cập nhật giới tính thành công!',
+                        'Cập nhật giới tính thất bại!',
+                      );
+                      await reloadUserData();
+                    });
                   },
                 ),
               ),
               const Divider(),
-              //Đổi mật khẩu
+
+              // Đổi mật khẩu
               if (role != 'admin')
                 ListTile(
                   leading: const Icon(Icons.lock),
                   title: const Text('Đổi mật khẩu'),
                   trailing: IconButton(
                     icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      showChangePasswordDialog(context);
+                    onPressed: () async {
+                      showChangePasswordDialog(context: context, idKh: idKh);
+                      await reloadUserData();
                     },
                   ),
                 ),
 
               const SizedBox(height: 20),
-              //nút đăng xuất
+              // Nút đăng xuất
               ElevatedButton(
                 onPressed: () async {
-                  await signOutAll(); // <-- Đăng xuất khỏi Google và Firebase
+                  await signOutAll();
                   Navigator.pushNamedAndRemoveUntil(
                     context,
                     '/login',
@@ -212,7 +359,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  minimumSize: Size.fromHeight(50),
+                  minimumSize: const Size.fromHeight(50),
                   backgroundColor: AppColors.buttonBackground,
                 ),
                 child: const Text(
@@ -228,29 +375,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
+// Đăng xuất Google & Firebase
 Future<void> signOutAll() async {
   await FirebaseAuth.instance.signOut();
   await GoogleSignIn().signOut();
 }
 
-// tên
+// Dialog đổi tên
 void showNameDialog(
   BuildContext context,
   String currentName,
   void Function(String) onNameChanged,
 ) {
-  String newName = currentName;
+  final controller = TextEditingController(text: currentName);
   showDialog(
     context: context,
     builder: (context) {
       return AlertDialog(
         title: const Text('Họ tên'),
         content: TextField(
+          controller: controller,
+          autofocus: true,
           decoration: const InputDecoration(labelText: 'Nhập họ tên mới'),
-          controller: TextEditingController(text: newName),
-          onChanged: (value) {
-            newName = value;
-          },
         ),
         actions: [
           TextButton(
@@ -259,7 +405,7 @@ void showNameDialog(
           ),
           TextButton(
             onPressed: () {
-              onNameChanged(newName); // Gọi callback để cập nhật tên
+              onNameChanged(controller.text.trim());
               Navigator.pop(context);
             },
             child: const Text('Lưu'),
@@ -270,13 +416,13 @@ void showNameDialog(
   );
 }
 
-//số điện thoại
+// Dialog đổi số điện thoại
 void showPhoneDialog(
   BuildContext context,
   String sdt,
   void Function(String) onPhoneChanged,
 ) {
-  String newPhone = sdt;
+  final controller = TextEditingController(text: sdt);
   String? errorText;
   showDialog(
     context: context,
@@ -291,13 +437,10 @@ void showPhoneDialog(
                 counterText: '',
                 errorText: errorText,
               ),
-              controller: TextEditingController(text: newPhone),
+              controller: controller,
               keyboardType: TextInputType.phone,
               maxLength: 10,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              onChanged: (value) {
-                newPhone = value;
-              },
             ),
             actions: [
               TextButton(
@@ -306,13 +449,13 @@ void showPhoneDialog(
               ),
               TextButton(
                 onPressed: () {
-                  if (!PasswordValidator.phoneValidator(newPhone)) {
+                  if (!validator.phoneValidator(controller.text)) {
                     setStateDialog(() {
                       errorText = 'Số điện thoại không hợp lệ';
                     });
                     return;
                   }
-                  onPhoneChanged(newPhone);
+                  onPhoneChanged(controller.text);
                   Navigator.pop(context);
                 },
                 child: const Text('Lưu'),
@@ -325,13 +468,13 @@ void showPhoneDialog(
   );
 }
 
-//email
+// Dialog đổi email
 void showEmailDialog(
   BuildContext context,
   String email,
   void Function(String) onEmailChanged,
 ) {
-  String newEmail = email;
+  final controller = TextEditingController(text: email);
   String? errorText;
   showDialog(
     context: context,
@@ -345,11 +488,8 @@ void showEmailDialog(
                 labelText: 'Nhập email mới',
                 errorText: errorText,
               ),
-              controller: TextEditingController(text: newEmail),
+              controller: controller,
               keyboardType: TextInputType.emailAddress,
-              onChanged: (value) {
-                newEmail = value;
-              },
             ),
             actions: [
               TextButton(
@@ -358,18 +498,12 @@ void showEmailDialog(
               ),
               TextButton(
                 onPressed: () {
-                  final emailRegex = RegExp(
-                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                  );
-                  if (!emailRegex.hasMatch(newEmail)) {
+                  if (!validator.emailValidator(controller.text)) {
                     setStateDialog(() {
                       errorText = 'Email không hợp lệ';
                     });
-                    return;
                   }
-                  onEmailChanged(
-                    newEmail,
-                  ); // Gọi callback để cập nhật email ở widget cha
+                  onEmailChanged(controller.text);
                   Navigator.pop(context);
                 },
                 child: const Text('Lưu'),
@@ -383,7 +517,10 @@ void showEmailDialog(
 }
 
 // đổi mật khẩu
-void showChangePasswordDialog(BuildContext context) {
+void showChangePasswordDialog({
+  required BuildContext context,
+  required int? idKh,
+}) {
   String oldPassword = '';
   String newPassword = '';
   String confirmPassword = '';
@@ -434,15 +571,16 @@ void showChangePasswordDialog(BuildContext context) {
                 child: const Text('Hủy'),
               ),
               TextButton(
-                onPressed: () {
-                  // Kiểm tra hợp lệ
+                onPressed: () async {
+                  // 1. Kiểm tra xác nhận mật khẩu trước
                   if (newPassword != confirmPassword) {
                     setStateDialog(() {
-                      errorText = 'Mật khẩu mới không khớp';
+                      errorText = 'Xác nhận mật khẩu không khớp';
                     });
                     return;
                   }
-                  if (!PasswordValidator.isValid(newPassword)) {
+                  // 2. Kiểm tra điều kiện mật khẩu mới
+                  if (!validator.isValid(newPassword)) {
                     setStateDialog(() {
                       errorText =
                           'Mật khẩu mới phải ít nhất 8 ký tự và có ký tự đặc biệt';
@@ -455,9 +593,33 @@ void showChangePasswordDialog(BuildContext context) {
                     });
                     return;
                   }
-                  // TODO: Kiểm tra mật khẩu cũ đúng chưa (nếu có backend)
-                  Navigator.pop(context);
-                  // Hiển thị thông báo hoặc xử lý tiếp
+
+                  // --- Gọi API đổi mật khẩu ---
+                  final apiService = ApiService();
+                  final userRepository = UserRepository(apiService);
+                  final userController = UserController(userRepository);
+
+                  if (idKh == null || idKh == 0) {
+                    setStateDialog(() {
+                      errorText = 'Không tìm thấy ID khách hàng!';
+                    });
+                    return;
+                  }
+                  final message = await userController.changePassword(
+                    idKh: idKh,
+                    oldPassword: oldPassword,
+                    newPassword: newPassword,
+                  );
+                  if (message == 'Đổi mật khẩu thành công') {
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Đổi mật khẩu thành công!')),
+                    );
+                  } else {
+                    setStateDialog(() {
+                      errorText = message ?? 'Đổi mật khẩu thất bại!';
+                    });
+                  }
                 },
                 child: const Text('Lưu'),
               ),
@@ -470,11 +632,18 @@ void showChangePasswordDialog(BuildContext context) {
 }
 
 //Giới tính
-void showGenderDialog(BuildContext context, String currentGender) {
+// Dialog đổi giới tính (trả về giá trị mới qua callback)
+void showGenderDialog(
+  BuildContext context,
+  String currentGender,
+  void Function(String) onGenderChanged,
+) {
+  // Nếu currentGender không phải "Nam" hoặc "Nữ", mặc định là "Nữ"
+  String selectedGender =
+      (currentGender == "Nam" || currentGender == "Nữ") ? currentGender : "Nữ";
   showDialog(
     context: context,
     builder: (context) {
-      String selectedGender = currentGender; // Use the parameter
       return StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
@@ -499,10 +668,15 @@ void showGenderDialog(BuildContext context, String currentGender) {
             ),
             actions: [
               TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Hủy'),
+              ),
+              TextButton(
                 onPressed: () {
-                  Navigator.of(context).pop(selectedGender);
+                  onGenderChanged(selectedGender);
+                  Navigator.pop(context);
                 },
-                child: const Text('OK'),
+                child: const Text('Lưu'),
               ),
             ],
           );
@@ -678,10 +852,8 @@ class _AddressDialogState extends State<_AddressDialog> {
     );
   }
 }
-// Ngày sinh
 
-// Đưa đoạn code này vào trong _ProfileScreenState như một phương thức:
-
+// Dialog đổi ngày sinh (extension cho _ProfileScreenState)
 extension _ProfileScreenStateBirthdayDialog on _ProfileScreenState {
   Future<void> showEditBirthdayDialog(BuildContext context) async {
     DateTime? selectedDate = ngaysinh;
