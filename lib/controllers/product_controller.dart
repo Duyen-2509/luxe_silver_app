@@ -66,4 +66,8 @@ class ProductController {
   Future<String?> hideProduct(int id) {
     return productRepository.hideProduct(id);
   }
+
+  Future<String?> showProduct(int id) {
+    return productRepository.showProduct(id);
+  }
 }

@@ -134,17 +134,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text('Thông Tin Cá Nhân'),
+        backgroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Column(
             children: [
-              const SizedBox(height: 40),
-              const Text(
-                'Thông Tin Cá Nhân',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
+              // Row(
+              //   children: [
+              //     IconButton(
+              //       icon: Icon(Icons.arrow_back),
+              //       onPressed: () {
+              //         Navigator.pop(context);
+              //       },
+              //     ),
+
+              //     const Text(
+              //       'Thông Tin Cá Nhân',
+              //       style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              //     ),
+              //   ],
+              // ),
+
               // Ảnh đại diện
               Container(
                 width: 100,
@@ -165,12 +183,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 10),
-              if (role.trim().toLowerCase() == 'khach_hang')
-                Text(
-                  '${diem.toStringAsFixed(3)} điểm',
-                  style: const TextStyle(fontSize: 16, color: Colors.pink),
-                )
-              else if (role.trim().toLowerCase() == 'admin')
+              // if (role.trim().toLowerCase() == 'khach_hang')
+              //   Text(
+              //     '${diem.toStringAsFixed(3)} điểm',
+              //     style: const TextStyle(fontSize: 16, color: Colors.pink),
+              //   )
+              // else
+              if (role.trim().toLowerCase() == 'admin')
                 Text(
                   'Admin',
                   style: const TextStyle(fontSize: 16, color: Colors.pink),

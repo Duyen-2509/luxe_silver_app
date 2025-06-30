@@ -139,4 +139,33 @@ class ProductRepository {
       return 'Lỗi: ${response.body}';
     }
   }
+
+  // Hiện sản phẩm
+  Future<String?> showProduct(int id) async {
+    var uri = Uri.parse('${apiService.baseUrl}products/$id/show');
+    var response = await http.put(uri, headers: {'Accept': 'application/json'});
+    if (response.statusCode == 200) {
+      return 'Hiện sản phẩm thành công';
+    } else {
+      return 'Lỗi: ${response.body}';
+    }
+  }
+
+  // Cập nhật số lượng kho
+  Future<String?> updateStock(int id, int soluongKho) async {
+    var uri = Uri.parse('${apiService.baseUrl}products/$id/stock');
+    var response = await http.put(
+      uri,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'soluong_kho': soluongKho}),
+    );
+    if (response.statusCode == 200) {
+      return 'Cập nhật số lượng kho thành công';
+    } else {
+      return 'Lỗi: ${response.body}';
+    }
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:luxe_silver_app/controllers/hoadon_controller.dart';
+import 'package:luxe_silver_app/views/chi_tiec_dh_nv.dart';
 
 class QLDonHangScreen extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -312,126 +313,199 @@ class _QLDonHangScreenState extends State<QLDonHangScreen> {
                         hd['ngaylap'] != null
                             ? DateTime.tryParse(hd['ngaylap'])
                             : null;
-                    return Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Text(
-                            //   hd['tennguoinhan'] ?? '',
-                            //   style: const TextStyle(
-                            //     fontWeight: FontWeight.bold,
-                            //     fontSize: 16,
-                            //   ),
-                            // ),
-                            if (hd['id_nv'] != null &&
-                                hd['ten_nhanvien'] != null)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: Text(
-                                  'NV: ${hd['id_nv']} - ${hd['ten_nhanvien']}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.blue,
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => ChiTietDonHangNVScreen(
+                                  mahd: hd['mahd'],
+                                  userData: widget.userData,
+                                ),
+                          ),
+                        );
+                        // Load lại danh sách hóa đơn
+                        setState(() {
+                          futureHoaDon = HoaDonController().fetchHoaDonList();
+                        });
+                      },
+                      child: Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Text(
+                              //   hd['tennguoinhan'] ?? '',
+                              //   style: const TextStyle(
+                              //     fontWeight: FontWeight.bold,
+                              //     fontSize: 16,
+                              //   ),
+                              // ),
+                              if (hd['id_nv'] != null &&
+                                  hd['ten_nhanvien'] != null)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 4),
+                                  child: Text(
+                                    'Nhân viên xử lý: ${hd['id_nv']} - ${hd['ten_nhanvien']}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blue,
+                                    ),
                                   ),
                                 ),
+                              const SizedBox(height: 4),
+                              Text('Mã đơn: ${hd['mahd'] ?? ''}'),
+                              Text(
+                                'Ngày: ${ngaylap != null ? '${ngaylap.day}/${ngaylap.month}/${ngaylap.year}' : ''}',
                               ),
-                            const SizedBox(height: 4),
-                            Text('Mã đơn: ${hd['mahd'] ?? ''}'),
-                            Text(
-                              'Ngày: ${ngaylap != null ? '${ngaylap.day}/${ngaylap.month}/${ngaylap.year}' : ''}',
-                            ),
-                            Text('Tổng: ${hd['tonggia'] ?? ''} vnd'),
-                            Text('Trạng thái: ${hd['ten_trangthai'] ?? ''}'),
-                            const SizedBox(height: 8),
-                            if (hd['id_ttdh'] == 1) // 1 = Chờ xác nhận
-                              Row(
-                                children: [
-                                  OutlinedButton.icon(
-                                    onPressed: () {
-                                      // TODO: Xử lý hủy đơn
-                                    },
-                                    icon: const Icon(
-                                      Icons.cancel_outlined,
-                                      size: 18,
-                                    ),
-                                    label: const Text('Hủy đơn'),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: Colors.black,
-                                      side: const BorderSide(
-                                        color: Colors.black12,
+                              Text('Tổng: ${hd['tonggia'] ?? ''} vnd'),
+                              Text('Trạng thái: ${hd['ten_trangthai'] ?? ''}'),
+                              const SizedBox(height: 8),
+                              if (hd['id_ttdh'] == 1) // 1 = Chờ xác nhận
+                                Row(
+                                  children: [
+                                    OutlinedButton.icon(
+                                      onPressed: () async {
+                                        // Nhân viên hủy đơn
+                                        String? lyDo = await showDialog<String>(
+                                          context: context,
+                                          builder: (context) {
+                                            String input = '';
+                                            return AlertDialog(
+                                              title: const Text(
+                                                'Lý do hủy đơn',
+                                              ),
+                                              content: TextField(
+                                                autofocus: true,
+                                                decoration:
+                                                    const InputDecoration(
+                                                      hintText:
+                                                          'Nhập lý do hủy đơn',
+                                                    ),
+                                                onChanged:
+                                                    (value) => input = value,
+                                              ),
+                                              actions: [
+                                                TextButton(
+                                                  onPressed:
+                                                      () =>
+                                                          Navigator.of(
+                                                            context,
+                                                          ).pop(),
+                                                  child: const Text('Hủy'),
+                                                ),
+                                                TextButton(
+                                                  onPressed:
+                                                      () => Navigator.of(
+                                                        context,
+                                                      ).pop(input),
+                                                  child: const Text('Xác nhận'),
+                                                ),
+                                              ],
+                                            );
+                                          },
+                                        );
+                                        if (lyDo == null ||
+                                            lyDo.trim().isEmpty) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Vui lòng nhập lý do hủy đơn!',
+                                              ),
+                                            ),
+                                          );
+                                          return;
+                                        }
+                                        final ok = await HoaDonController()
+                                            .huyDonNV(hd['mahd'], lyDo);
+                                        if (ok) {
+                                          setState(() {
+                                            hd['id_ttdh'] = 5;
+                                            hd['ten_trangthai'] = 'Đã hủy';
+                                          });
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Đã hủy đơn hàng'),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      icon: const Icon(
+                                        Icons.cancel_outlined,
+                                        size: 18,
+                                      ),
+                                      label: const Text('Hủy đơn'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.red,
+                                        side: const BorderSide(
+                                          color: Colors.red,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  ElevatedButton.icon(
-                                    onPressed: () async {
-                                      final idNvRaw = widget.userData['id_nv'];
-                                      print(
-                                        'DEBUG id_nv------------->: $idNvRaw (${idNvRaw.runtimeType})',
-                                      );
-                                      final int? idNv =
-                                          idNvRaw is int
-                                              ? idNvRaw
-                                              : int.tryParse(
-                                                idNvRaw?.toString() ?? '',
-                                              );
-                                      final tenNv = widget.userData['ten'];
-                                      if (idNv == null) {
-                                        print(
-                                          'DEBUG idNv sau ép kiểu---------->: $idNv',
-                                        );
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                              'Không xác định được mã nhân viên!',
+                                    const SizedBox(width: 12),
+                                    ElevatedButton.icon(
+                                      onPressed: () async {
+                                        final idNvRaw =
+                                            widget.userData['id_nv'];
+                                        final int? idNv =
+                                            idNvRaw is int
+                                                ? idNvRaw
+                                                : int.tryParse(
+                                                  idNvRaw?.toString() ?? '',
+                                                );
+                                        final tenNv = widget.userData['ten'];
+                                        if (idNv == null) {
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                'Không xác định được mã nhân viên!',
+                                              ),
                                             ),
-                                          ),
-                                        );
-                                        return;
-                                      }
-                                      // 1. Cập nhật trạng thái
-                                      final ok = await HoaDonController()
-                                          .updateTrangThaiHoaDon(
-                                            hd['mahd'],
-                                            2, // Đang xử lý
                                           );
-                                      // 2. Cập nhật nhân viên
-                                      final okNv = await HoaDonController()
-                                          .updateNhanVien(hd['mahd'], idNv);
-                                      if (ok && okNv) {
-                                        setState(() {
-                                          hd['id_ttdh'] = 2;
-                                          hd['ten_trangthai'] = 'Đang xử lý';
-                                          hd['id_nv'] = idNv;
-                                          hd['ten_nhanvien'] = tenNv;
-                                        });
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Đã xác nhận đơn'),
-                                          ),
-                                        );
-                                      }
-                                    },
-                                    icon: const Icon(Icons.check, size: 18),
-                                    label: const Text('Xác nhận'),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.black,
-                                      foregroundColor: Colors.white,
+                                          return;
+                                        }
+                                        // Gán nhân viên xử lý cho đơn hàng
+                                        final okNv = await HoaDonController()
+                                            .ganNhanVien(hd['mahd'], idNv);
+                                        if (okNv) {
+                                          setState(() {
+                                            hd['id_ttdh'] = 2;
+                                            hd['ten_trangthai'] = 'Đang xử lý';
+                                            hd['id_nv'] = idNv;
+                                            hd['ten_nhanvien'] = tenNv;
+                                          });
+                                          ScaffoldMessenger.of(
+                                            context,
+                                          ).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Đã xác nhận đơn'),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      icon: const Icon(Icons.check, size: 18),
+                                      label: const Text('Xác nhận'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.black,
+                                        foregroundColor: Colors.white,
+                                      ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                          ],
+                                  ],
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     );

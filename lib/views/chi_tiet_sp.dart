@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/image.dart';
+import 'package:luxe_silver_app/controllers/comment_controller.dart';
 import 'package:luxe_silver_app/controllers/product_controller.dart';
+import 'package:luxe_silver_app/repository/comment_repository.dart';
 import 'package:luxe_silver_app/repository/product_repository.dart';
 import 'package:luxe_silver_app/views/gio_hang.dart';
 import 'package:luxe_silver_app/views/sua_sp.dart';
@@ -7,6 +10,7 @@ import 'package:luxe_silver_app/views/thanh_toan.dart';
 import '../models/sanPham_model.dart';
 import '../repository/produt_data_repository.dart';
 import '../services/api_service.dart';
+import 'package:luxe_silver_app/views/khung_bl.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final int productId;
@@ -31,38 +35,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   // Biến để kiểm soát việc hiển thị bình luận
   bool showComments = false;
   // 2 bình luận mẫu
-  final List<Map<String, dynamic>> comments = [
-    {
-      'user': 'nguyenvana',
-      'rating': 5,
-      'content': 'Sản phẩm rất đẹp, chất lượng tốt, giao hàng nhanh!',
-    },
-    {
-      'user': 'lethib',
-      'rating': 4,
-      'content': 'Đóng gói cẩn thận, sản phẩm như mô tả, sẽ ủng hộ tiếp.',
-    },
-    {
-      'user': 'nguyenvana',
-      'rating': 5,
-      'content': 'Sản phẩm rất đẹp, chất lượng tốt, giao hàng nhanh!',
-    },
-    {
-      'user': 'lethib',
-      'rating': 4,
-      'content': 'Đóng gói cẩn thận, sản phẩm như mô tả, sẽ ủng hộ tiếp.',
-    },
-    {
-      'user': 'nguyenvana',
-      'rating': 5,
-      'content': 'Sản phẩm rất đẹp, chất lượng tốt, giao hàng nhanh!',
-    },
-    {
-      'user': 'lethib',
-      'rating': 4,
-      'content': 'Đóng gói cẩn thận, sản phẩm như mô tả, sẽ ủng hộ tiếp.',
-    },
-  ];
 
   Widget _buildStars(int star) {
     return Row(
@@ -240,119 +212,51 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 color: Colors.black,
                               ),
                             ),
-                            // Thêm phần này để hiển thị số sao và xổ bình luận
+                            //hiển thị số sao và xổ bình luận
                             const SizedBox(height: 8),
-                            GestureDetector(
-                              onTap: () {
-                                setState(() {
-                                  showComments = true;
-                                });
-                              },
-                              child: Row(
-                                children: [
-                                  _buildStars(
-                                    5,
-                                  ), // ví dụ 5 sao, có thể lấy từ dữ liệu sản phẩm nếu có
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '(3 lượt đánh giá)',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      color: Colors.grey[600],
-                                    ),
+                            FutureBuilder<Map<String, dynamic>>(
+                              future: CommentController(
+                                CommentRepository(ApiService()),
+                              ).fetchStatistic(sanPham.idSp),
+                              builder: (context, snapshot) {
+                                final trungBinh =
+                                    snapshot.data?['trung_binh'] ?? 5.0;
+                                final soLuot = snapshot.data?['so_luot'] ?? 0;
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) => Scaffold(
+                                              appBar: AppBar(
+                                                title: const Text('Bình luận'),
+                                              ),
+                                              body: CommentSection(
+                                                productId: sanPham.idSp,
+                                                userData: widget.userData,
+                                              ),
+                                            ),
+                                      ),
+                                    );
+                                  },
+                                  child: Row(
+                                    children: [
+                                      _buildStars((trungBinh as num).round()),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        '($soLuot lượt đánh giá)',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Colors.grey[600],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
+                                );
+                              },
                             ),
-                            if (showComments)
-                              Container(
-                                margin: const EdgeInsets.only(top: 16),
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[50],
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(color: Colors.grey[200]!),
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Bình luận',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 15,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    ...comments.map(
-                                      (c) => Padding(
-                                        padding: const EdgeInsets.only(
-                                          bottom: 10,
-                                        ),
-                                        child: Row(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            CircleAvatar(
-                                              radius: 16,
-                                              child: Text(
-                                                c['user'][0].toUpperCase(),
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                ),
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Expanded(
-                                              child: Column(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  Row(
-                                                    children: [
-                                                      Text(
-                                                        c['user'],
-                                                        style: const TextStyle(
-                                                          fontWeight:
-                                                              FontWeight.w500,
-                                                        ),
-                                                      ),
-                                                      const SizedBox(width: 8),
-                                                      _buildStars(c['rating']),
-                                                    ],
-                                                  ),
-                                                  const SizedBox(height: 2),
-                                                  Text(
-                                                    c['content'],
-                                                    style: const TextStyle(
-                                                      fontSize: 13,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    Align(
-                                      alignment: Alignment.centerRight,
-                                      child: TextButton.icon(
-                                        onPressed: () {
-                                          setState(() {
-                                            showComments = false;
-                                          });
-                                        },
-                                        icon: const Icon(
-                                          Icons.arrow_back,
-                                          size: 18,
-                                        ),
-                                        label: const Text('Quay lại'),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+
                             const SizedBox(height: 8),
                             // Size
                             const Text(
@@ -478,11 +382,47 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                           ),
                                         ),
                                         InkWell(
+                                          // ...existing code...
                                           onTap: () {
-                                            setState(() {
-                                              quantity++;
-                                            });
+                                            if (quantity <
+                                                (selectedDetail?.soluongKho ??
+                                                    sanPham.soluongKho)) {
+                                              setState(() {
+                                                quantity++;
+                                              });
+                                            } else {
+                                              showDialog(
+                                                context: context,
+                                                builder:
+                                                    (context) => AlertDialog(
+                                                      title: const Text(
+                                                        'Thông báo',
+                                                        style: TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          color: Colors.red,
+                                                        ),
+                                                      ),
+                                                      content: const Text(
+                                                        'Vượt quá số lượng kho!',
+                                                      ),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed:
+                                                              () =>
+                                                                  Navigator.of(
+                                                                    context,
+                                                                  ).pop(),
+                                                          child: const Text(
+                                                            'Đóng',
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                              );
+                                            }
                                           },
+
                                           child: Container(
                                             padding: const EdgeInsets.all(8),
                                             child: const Icon(
@@ -553,151 +493,12 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                       // Ẩn hoàn toàn với nhân viên
                       return const SizedBox.shrink();
                     }
-                    // if (role == 'admin') {
-                    //   // Admin: nút Sửa và Ẩn (chưa làm gì)
-                    //   return Row(
-                    //     children: [
-                    //       Expanded(
-                    //         child: OutlinedButton(
-                    //           onPressed: () {
-                    //             Navigator.push(
-                    //               context,
-                    //               MaterialPageRoute(
-                    //                 builder:
-                    //                     (context) =>
-                    //                         EditProductScreen(sanPham: sanPham),
-                    //               ),
-                    //             );
-                    //           },
-                    //           style: OutlinedButton.styleFrom(
-                    //             side: const BorderSide(color: Colors.grey),
-                    //             padding: const EdgeInsets.symmetric(
-                    //               vertical: 12,
-                    //             ),
-                    //             shape: RoundedRectangleBorder(
-                    //               borderRadius: BorderRadius.circular(8),
-                    //             ),
-                    //           ),
-                    //           child: const Text(
-                    //             'Sửa',
-                    //             style: TextStyle(
-                    //               color: Colors.black,
-                    //               fontSize: 16,
-                    //               fontWeight: FontWeight.w500,
-                    //             ),
-                    //           ),
-                    //         ),
-                    //       ),
-                    //       const SizedBox(width: 12),
-                    //       Expanded(
-                    //         child: ElevatedButton(
-                    //           onPressed: () async {
-                    //             final result = await controller.hideProduct(
-                    //               sanPham.idSp,
-                    //             );
-                    //             if (result) {
-                    //               ScaffoldMessenger.of(context).showSnackBar(
-                    //                 const SnackBar(
-                    //                   content: Text('Đã ẩn sản phẩm'),
-                    //                 ),
-                    //               );
-                    //               setState(() {
-                    //                 sanPham.trangthai =
-                    //                     0; // nếu có thuộc tính này
-                    //               });
-                    //             }
-                    //           },
-                    //           style: ElevatedButton.styleFrom(
-                    //             backgroundColor: Colors.black,
-                    //             padding: const EdgeInsets.symmetric(
-                    //               vertical: 12,
-                    //             ),
-                    //             shape: RoundedRectangleBorder(
-                    //               borderRadius: BorderRadius.circular(8),
-                    //             ),
-                    //           ),
-                    //           child: const Text(
-                    //             'Ẩn',
-                    //             style: TextStyle(
-                    //               color: Colors.white,
-                    //               fontSize: 16,
-                    //               fontWeight: FontWeight.w500,
-                    //             ),
-                    //           ),
-                    //         ),
-                    //       ),
-                    //     ],
-                    //   );
-                    // }
-                    // // Khách hàng: hiện đầy đủ 2 nút
-                    // return Row(
-                    //   children: [
-                    //     Expanded(
-                    //       child: OutlinedButton(
-                    //         onPressed: () {
-                    //           _addToCart(sanPham);
-                    //         },
-                    //         style: OutlinedButton.styleFrom(
-                    //           side: const BorderSide(color: Colors.grey),
-                    //           padding: const EdgeInsets.symmetric(vertical: 12),
-                    //           shape: RoundedRectangleBorder(
-                    //             borderRadius: BorderRadius.circular(8),
-                    //           ),
-                    //         ),
-                    //         child: const Text(
-                    //           'Thêm giỏ hàng',
-                    //           style: TextStyle(
-                    //             color: Colors.black,
-                    //             fontSize: 16,
-                    //             fontWeight: FontWeight.w500,
-                    //           ),
-                    //         ),
-                    //       ),
-                    //     ),
-                    //     const SizedBox(width: 12),
-                    //     Expanded(
-                    //       child: ElevatedButton(
-                    //         onPressed: () {
-                    //           Navigator.push(
-                    //             context,
-                    //             MaterialPageRoute(
-                    //               builder:
-                    //                   (context) => CheckoutScreen(
-                    //                     product: sanPham,
-                    //                     quantity: quantity,
-                    //                     selectedSize: selectedSize,
-                    //                     cartTotal:
-                    //                         ((selectedDetail?.gia ?? 0) *
-                    //                                 quantity)
-                    //                             .toDouble(),
-                    //                     userData: widget.userData,
-                    //                   ),
-                    //             ),
-                    //           );
-                    //         },
-                    //         style: ElevatedButton.styleFrom(
-                    //           backgroundColor: Colors.black,
-                    //           padding: const EdgeInsets.symmetric(vertical: 12),
-                    //           shape: RoundedRectangleBorder(
-                    //             borderRadius: BorderRadius.circular(8),
-                    //           ),
-                    //         ),
-                    //         child: const Text(
-                    //           'Mua ngay',
-                    //           style: TextStyle(
-                    //             color: Colors.white,
-                    //             fontSize: 16,
-                    //             fontWeight: FontWeight.w500,
-                    //           ),
-                    //         ),
-                    //       ),
-                    //     ),
-                    //   ],
-                    // );
+
                     final bool isHidden = (sanPham.trangthai ?? 1) == 0;
                     final bool isOutOfStock = sanPham.soluongKho == 0;
 
                     // Nếu là admin: luôn cho sửa và ẩn, kể cả khi sản phẩm đã bị ẩn hoặc hết hàng
+                    // ...trong Builder của bottom buttons...
                     if (role == 'admin') {
                       return Row(
                         children: [
@@ -712,7 +513,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                             EditProductScreen(sanPham: sanPham),
                                   ),
                                 );
-                                // Nếu result == true (đã lưu thành công), reload lại dữ liệu
                                 if (result == true) {
                                   setState(() {
                                     _futureProduct = ProductDataRepository(
@@ -744,23 +544,50 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           Expanded(
                             child: ElevatedButton(
                               onPressed: () async {
-                                final result = await controller.hideProduct(
-                                  sanPham.idSp,
-                                );
-                                if (result != null &&
-                                    result.contains('thành công')) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Đã ẩn sản phẩm'),
-                                    ),
+                                String? result;
+                                if (!isHidden) {
+                                  // Đang hiện, cho phép ẩn
+                                  result = await controller.hideProduct(
+                                    sanPham.idSp,
                                   );
-                                  setState(() {
-                                    sanPham.trangthai = 0;
-                                  });
+                                  if (result != null &&
+                                      result.contains('thành công')) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Đã ẩn sản phẩm'),
+                                      ),
+                                    );
+                                    // Load lại chi tiết sản phẩm để cập nhật trạng thái
+                                    setState(() {
+                                      _futureProduct = ProductDataRepository(
+                                        ApiService(),
+                                      ).fetchProductDetail(widget.productId);
+                                    });
+                                  }
+                                } else {
+                                  // Đang ẩn, cho phép hiện lại
+                                  result = await controller.showProduct(
+                                    sanPham.idSp,
+                                  );
+                                  if (result != null &&
+                                      result.contains('thành công')) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Đã hiện sản phẩm'),
+                                      ),
+                                    );
+                                    Navigator.pop(context, true);
+                                    setState(() {
+                                      _futureProduct = ProductDataRepository(
+                                        ApiService(),
+                                      ).fetchProductDetail(widget.productId);
+                                    });
+                                  }
                                 }
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.black,
+                                backgroundColor:
+                                    !isHidden ? Colors.black : Colors.green,
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 12,
                                 ),
@@ -768,9 +595,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
-                              child: const Text(
-                                'Ẩn',
-                                style: TextStyle(
+                              child: Text(
+                                !isHidden ? 'Ẩn' : 'Hiện sản phẩm',
+                                style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
@@ -779,21 +606,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             ),
                           ),
                         ],
-                      );
-                    }
-
-                    // Nếu là khách hàng: ẩn nút mua khi sản phẩm đã ẩn hoặc hết hàng
-                    if (isHidden || isOutOfStock) {
-                      return Center(
-                        child: Text(
-                          isHidden ? 'SẢN PHẨM ĐÃ ẨN' : 'HẾT HÀNG',
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                            decoration: TextDecoration.lineThrough,
-                          ),
-                        ),
                       );
                     }
 
@@ -839,6 +651,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                                     quantity)
                                                 .toDouble(),
                                         userData: widget.userData,
+                                        selectedItems: [
+                                          CartItem(
+                                            sanPham: sanPham,
+                                            soLuong: quantity,
+                                            selectedSize: selectedSize,
+                                          ),
+                                        ],
                                       ),
                                 ),
                               );
@@ -883,5 +702,198 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         builder: (context) => CartScreen(userData: widget.userData),
       ),
     );
+  }
+
+  Future<void> _replyToComment(
+    BuildContext context,
+    Map<String, dynamic> comment,
+  ) async {
+    final reply = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController();
+        return AlertDialog(
+          title: const Text('Trả lời bình luận'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Bình luận của ${comment['ten_khach_hang'] ?? 'Khách hàng'}:',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '"${comment['noidung'] ?? ''}"',
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Nội dung trả lời',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text('Gửi'),
+            ),
+          ],
+        );
+      },
+    );
+    if (reply != null && reply.trim().isNotEmpty) {
+      try {
+        await CommentController(
+          CommentRepository(ApiService()),
+        ).replyComment(comment['id_bl'], {
+          'id_nv': widget.userData['id_nv'],
+          'traloi_kh': reply.trim(),
+          'id_sp': comment['id_sp'],
+        });
+        setState(() {});
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Đã trả lời bình luận')));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Lỗi khi trả lời: $e')));
+        }
+      }
+    }
+  }
+
+  Future<void> _editReply(
+    BuildContext context,
+    Map<String, dynamic> comment,
+  ) async {
+    final newReply = await showDialog<String>(
+      context: context,
+      builder: (context) {
+        final controller = TextEditingController(text: comment['traloi_kh']);
+        return AlertDialog(
+          title: const Text('Sửa trả lời'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Bình luận gốc:',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '"${comment['noidung'] ?? ''}"',
+                style: TextStyle(
+                  fontStyle: FontStyle.italic,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Nội dung trả lời',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hủy'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, controller.text),
+              child: const Text('Lưu'),
+            ),
+          ],
+        );
+      },
+    );
+    if (newReply != null && newReply.trim().isNotEmpty) {
+      try {
+        await CommentController(
+          CommentRepository(ApiService()),
+        ).replyComment(comment['id_bl'], {
+          'id_nv': widget.userData['id_nv'],
+          'traloi_kh': newReply.trim(),
+          'id_sp': comment['id_sp'],
+        });
+        setState(() {});
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Đã cập nhật trả lời')));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Lỗi khi cập nhật: $e')));
+        }
+      }
+    }
+  }
+
+  Future<void> _deleteReply(
+    BuildContext context,
+    Map<String, dynamic> comment,
+  ) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text('Xóa trả lời'),
+            content: const Text('Bạn chắc chắn muốn xóa trả lời này không?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Hủy'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Xóa', style: TextStyle(color: Colors.red)),
+              ),
+            ],
+          ),
+    );
+    if (confirm == true) {
+      try {
+        await CommentController(
+          CommentRepository(ApiService()),
+        ).deleteReply(comment['id_ctbl'], widget.userData['id_nv']);
+        setState(() {});
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Đã xóa trả lời')));
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Lỗi khi xóa: $e')));
+        }
+      }
+    }
   }
 }

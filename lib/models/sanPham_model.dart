@@ -88,7 +88,10 @@ class SanPham {
               ?.map((e) => SanPhamDetail.fromJson(e))
               .toList(),
       gia: json['gia'],
-      trangthai: json['trangthai'],
+      trangthai:
+          json['trangthai'] is int
+              ? json['trangthai']
+              : int.tryParse(json['trangthai']?.toString() ?? '1'),
       createdAt:
           json['created_at'] != null
               ? DateTime.tryParse(json['created_at'])

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/controllers/hoadon_controller.dart';
+import 'package:luxe_silver_app/views/gio_hang.dart';
+import 'package:luxe_silver_app/views/tai_khoan.dart';
 import 'chi_tiet_don_hang.dart';
 
 class DonHangScreen extends StatefulWidget {
@@ -23,6 +26,32 @@ class _DonHangScreenState extends State<DonHangScreen> {
   ];
 
   Future<List<Map<String, dynamic>>>? futureHoaDon;
+  int _selectedIndex = 2;
+
+  void _onItemTapped(int index) {
+    if (index == 0) {
+      Navigator.popUntil(context, (route) => route.isFirst);
+      // Chuyển về trang chủ
+    } else if (index == 1) {
+      Navigator.popUntil(context, (route) => route.isFirst);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CartScreen(userData: widget.userData),
+        ),
+      );
+    } else if (index == 2) {
+      // Đang ở trang Đơn hàng, không làm gì cả
+    } else if (index == 3) {
+      Navigator.popUntil(context, (route) => route.isFirst);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ProfileScreen(userData: widget.userData),
+        ),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -160,7 +189,10 @@ class _DonHangScreenState extends State<DonHangScreen> {
                             context,
                             MaterialPageRoute(
                               builder:
-                                  (_) => ChiTietDonHangScreen(mahd: hd['mahd']),
+                                  (_) => ChiTietDonHangScreen(
+                                    mahd: hd['mahd'],
+                                    userData: widget.userData,
+                                  ),
                             ),
                           );
                           // Làm mới lại danh sách hóa đơn
@@ -176,6 +208,42 @@ class _DonHangScreenState extends State<DonHangScreen> {
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.3),
+              spreadRadius: 1,
+              blurRadius: 5,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: AppColors.bottomNavBackground,
+          selectedItemColor: AppColors.bottomNavSelected,
+          unselectedItemColor: AppColors.bottomNavUnselected,
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_cart),
+              label: 'Giỏ hàng',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.receipt_long_outlined),
+              label: 'Đơn hàng',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_outline),
+              label: 'Tài khoản',
+            ),
+          ],
+        ),
       ),
     );
   }

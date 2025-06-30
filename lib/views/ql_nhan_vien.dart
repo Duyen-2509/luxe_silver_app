@@ -133,15 +133,53 @@ class _QLNhanVienScreenState extends State<QLNhanVienScreen> {
                               diaChi: nv['diachi'] ?? '',
                               isActive: nv['trangthai'] == 1,
                               onLockChanged: (value) async {
-                                if (value) {
-                                  await userController.unhideStaff(nv['id_nv']);
-                                  nv['trangthai'] = 1;
-                                } else {
-                                  await userController.hideStaff(nv['id_nv']);
-                                  nv['trangthai'] = 0;
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder:
+                                      (context) => AlertDialog(
+                                        title: Text(
+                                          value
+                                              ? 'Mở khóa nhân viên'
+                                              : 'Khóa nhân viên',
+                                        ),
+                                        content: Text(
+                                          value
+                                              ? 'Bạn có chắc muốn mở khóa cho nhân viên này?'
+                                              : 'Bạn có chắc muốn khóa nhân viên này?',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed:
+                                                () => Navigator.pop(
+                                                  context,
+                                                  false,
+                                                ),
+                                            child: const Text('Hủy'),
+                                          ),
+                                          TextButton(
+                                            onPressed:
+                                                () => Navigator.pop(
+                                                  context,
+                                                  true,
+                                                ),
+                                            child: const Text('Xác nhận'),
+                                          ),
+                                        ],
+                                      ),
+                                );
+                                if (confirm == true) {
+                                  if (value) {
+                                    await userController.unhideStaff(
+                                      nv['id_nv'],
+                                    );
+                                    nv['trangthai'] = 1;
+                                  } else {
+                                    await userController.hideStaff(nv['id_nv']);
+                                    nv['trangthai'] = 0;
+                                  }
+                                  _applyFilter(); // Cập nhật lại danh sách lọc
+                                  setState(() {}); // Cập nhật UI
                                 }
-                                _applyFilter(); // Cập nhật lại danh sách lọc
-                                setState(() {}); // Cập nhật UI
                               },
                             ),
                           );

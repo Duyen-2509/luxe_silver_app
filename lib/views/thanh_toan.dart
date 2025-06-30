@@ -14,6 +14,7 @@ class CheckoutScreen extends StatefulWidget {
   final int? quantity;
   final String? selectedSize;
   final double cartTotal;
+  final List<CartItem> selectedItems;
   final Map<String, dynamic> userData;
 
   const CheckoutScreen({
@@ -22,6 +23,7 @@ class CheckoutScreen extends StatefulWidget {
     required this.userData,
     this.product,
     this.quantity,
+    required this.selectedItems,
     this.selectedSize,
   }) : super(key: key);
 
@@ -35,20 +37,21 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   double voucherDiscount = 0.0;
   String? shippingName;
   String? shippingAddress;
+  String? shippingPhone;
   String paymentMethod = 'cod'; // 'cod' = tiền mặt,
   String formatPrice(double price) {
     return '${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} vnđ';
   }
 
-  // Hàm tạo mã hóa đơn ngẫu nhiên
-  String generateRandomMaHD([int length = 6]) {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    final rand = Random();
-    return List.generate(
-      length,
-      (index) => chars[rand.nextInt(chars.length)],
-    ).join();
-  }
+  // // Hàm tạo mã hóa đơn ngẫu nhiên
+  // String generateRandomMaHD([int length = 6]) {
+  //   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  //   final rand = Random();
+  //   return List.generate(
+  //     length,
+  //     (index) => chars[rand.nextInt(chars.length)],
+  //   ).join();
+  // }
 
   @override
   void initState() {
@@ -59,11 +62,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<void> _loadShippingInfo() async {
     final prefs = await SharedPreferences.getInstance();
     final userId =
-        widget.userData['id']?.toString() ?? widget.userData['email'] ?? '';
+        widget.userData['id']?.toString() ??
+        widget.userData['sodienthoai'] ??
+        '';
     if (!mounted) return;
     setState(() {
       shippingName = prefs.getString('shippingName_$userId');
       shippingAddress = prefs.getString('shippingAddress_$userId');
+      final phone = prefs.getString('shippingPhone_$userId');
+      shippingPhone =
+          (phone == null || phone.isEmpty)
+              ? widget.userData['sodienthoai']?.toString() ?? ''
+              : phone;
     });
   }
 
@@ -86,7 +96,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         : 0,
               },
             ]
-            : cartController.cartItems;
+            : widget.selectedItems;
 
     final totalProduct =
         isBuyNow
@@ -132,11 +142,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          Icons.location_on,
-                          size: 20,
-                          color: Colors.grey[600],
-                        ),
+                        Icon(Icons.location_on, size: 20, color: Colors.orange),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Column(
@@ -145,6 +151,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               Text(
                                 // Hiển thị tên người nhận: ưu tiên tên mới, nếu chưa có thì lấy tên user
                                 'Người nhận: ${shippingName ?? widget.userData['ten']}',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                // Hiển thị tên người nhận: ưu tiên tên mới, nếu chưa có thì lấy tên user
+                                'SĐT: ${shippingPhone ?? widget.userData['sdt'] ?? ""}',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               SizedBox(height: 4),
@@ -163,8 +174,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               MaterialPageRoute(
                                 builder:
                                     (context) => DiaChiNhanHangScreen(
-                                      currentName: '',
-                                      currentAddress: '',
+                                      currentName:
+                                          shippingName ??
+                                          widget.userData['ten'],
+                                      currentAddress:
+                                          shippingAddress ??
+                                          widget.userData['diachi'],
+                                      currentPhone:
+                                          shippingPhone ??
+                                          widget.userData['sdt'] ??
+                                          '',
                                     ),
                               ),
                             );
@@ -174,6 +193,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               setState(() {
                                 shippingName = result['name'];
                                 shippingAddress = result['address'];
+                                shippingPhone = result['phone'];
                               });
                               final prefs =
                                   await SharedPreferences.getInstance();
@@ -188,6 +208,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               await prefs.setString(
                                 'shippingAddress_$userId',
                                 shippingAddress!,
+                              );
+                              await prefs.setString(
+                                'shippingPhone_$userId',
+                                shippingPhone ?? '',
                               );
                             }
                           },
@@ -243,19 +267,39 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         context: context,
                         builder:
                             (context) => AlertDialog(
-                              title: const Text('Chọn phương thức thanh toán'),
+                              title: Text(
+                                'Chọn phương thức thanh toán',
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 18,
+
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               content: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   ListTile(
-                                    leading: Icon(Icons.money),
-                                    title: Text('Thanh toán khi nhận hàng'),
+                                    leading: Icon(
+                                      Icons.money,
+                                      color: Colors.green,
+                                    ),
+                                    title: Text(
+                                      'Thanh toán khi nhận hàng',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
                                     onTap: () => Navigator.pop(context, 'cod'),
                                   ),
                                   SizedBox(height: 12),
                                   ListTile(
-                                    leading: Icon(Icons.qr_code),
-                                    title: Text('Thanh toán qua Stripe'),
+                                    leading: Icon(
+                                      Icons.qr_code,
+                                      color: Colors.blue,
+                                    ),
+                                    title: Text(
+                                      'Thanh toán qua Stripe',
+                                      style: const TextStyle(fontSize: 14),
+                                    ),
                                     onTap:
                                         () => Navigator.pop(context, 'stripe'),
                                   ),
@@ -362,7 +406,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.local_offer, color: Colors.black),
+                          Icon(Icons.local_offer, color: Colors.green),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Text(
@@ -372,6 +416,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
+                                color: Colors.green,
                               ),
                             ),
                           ),
@@ -406,7 +451,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   const Divider(height: 30),
 
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
                         formatPrice(totalPayment),
@@ -440,26 +485,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () async {
-                  //               if (paymentMethod == 'stripe') {
-                  //   // Chuyển sang màn hình thanh toán Stripe
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(
-                  //       builder: (context) => StripePaymentScreen(
-                  //         // truyền các tham số cần thiết nếu có
-                  //       ),
-                  //     ),
-                  //   );
-                  // } else {
-                  //   // Xử lý thanh toán khi nhận hàng (COD) ở đây
-                  // }
-                  // 1. Tạo mã hóa đơn ngẫu nhiên
-                  final mahd = generateRandomMaHD(6);
-                  // 2. Chuẩn bị dữ liệu hóa đơn
                   // Lấy userId và các thông tin cần thiết
                   final userId = widget.userData['id']?.toString() ?? '';
                   final tenNguoiNhan = shippingName ?? widget.userData['ten'];
                   final diaChi = shippingAddress ?? widget.userData['diachi'];
+                  final soDienThoai =
+                      shippingPhone ?? widget.userData['sdt'] ?? '';
                   final diaChiFull = '$tenNguoiNhan - $diaChi';
                   final phuongThuc =
                       paymentMethod == 'cod'
@@ -475,7 +506,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   widget.product!.details != null &&
                                           widget.product!.details!.isNotEmpty
                                       ? widget.product!.details!.first.idCtsp
-                                      : null, // <-- phải có id_ctsp
+                                      : null,
                               'soluong': widget.quantity ?? 1,
                               'gia':
                                   widget.product!.details != null &&
@@ -492,13 +523,66 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       item.sanPham.details != null &&
                                               item.sanPham.details!.isNotEmpty
                                           ? item.sanPham.details!.first.idCtsp
-                                          : null, // <-- phải có id_ctsp
+                                          : null,
                                   'soluong': item.soLuong,
                                   'gia': item.giaDonVi,
                                 },
                               )
                               .toList();
-
+                  // Kiểm tra địa chỉ
+                  if (diaChi == null || diaChi.trim().isEmpty) {
+                    showDialog(
+                      context: context,
+                      builder:
+                          (context) => AlertDialog(
+                            title: const Text(
+                              'Thiếu địa chỉ nhận hàng',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                            content: const Text(
+                              'Vui lòng nhập địa chỉ nhận hàng trước khi thanh toán.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text('Đóng'),
+                              ),
+                            ],
+                          ),
+                    );
+                    return;
+                  }
+                  // Kiểm tra số điện thoại
+                  if (soDienThoai.trim().isEmpty) {
+                    showDialog(
+                      context: context,
+                      builder:
+                          (context) => AlertDialog(
+                            title: const Text(
+                              'Thiếu số điện thoại',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+                            content: const Text(
+                              'Vui lòng nhập số điện thoại nhận hàng trước khi thanh toán.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: const Text('Đóng'),
+                              ),
+                            ],
+                          ),
+                    );
+                    return;
+                  }
                   // Chuẩn bị dữ liệu gửi lên API
                   final hoadonData = {
                     'id_kh': int.tryParse(userId) ?? 0,
@@ -663,7 +747,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           Text(label, style: TextStyle(fontSize: 14, color: Colors.grey[600])),
           Text(
             value,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
           ),
         ],
       ),

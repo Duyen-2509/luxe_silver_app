@@ -4,11 +4,13 @@ import '../services/vietnam_location_api.dart';
 class DiaChiNhanHangScreen extends StatefulWidget {
   final String currentName;
   final String currentAddress;
+  final String currentPhone;
 
   const DiaChiNhanHangScreen({
     Key? key,
     required this.currentName,
     required this.currentAddress,
+    required this.currentPhone,
   }) : super(key: key);
 
   @override
@@ -18,6 +20,7 @@ class DiaChiNhanHangScreen extends StatefulWidget {
 class _DiaChiNhanHangScreenState extends State<DiaChiNhanHangScreen> {
   late TextEditingController _nameController;
   late TextEditingController _addressController;
+  late TextEditingController _phoneController;
 
   List<Map<String, dynamic>> cities = [];
   List<Map<String, dynamic>> districts = [];
@@ -32,6 +35,7 @@ class _DiaChiNhanHangScreenState extends State<DiaChiNhanHangScreen> {
     super.initState();
     _nameController = TextEditingController(text: widget.currentName);
     _addressController = TextEditingController(text: widget.currentAddress);
+    _phoneController = TextEditingController(text: widget.currentPhone);
     _loadCities();
   }
 
@@ -70,6 +74,7 @@ class _DiaChiNhanHangScreenState extends State<DiaChiNhanHangScreen> {
   void dispose() {
     _nameController.dispose();
     _addressController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -95,6 +100,15 @@ class _DiaChiNhanHangScreenState extends State<DiaChiNhanHangScreen> {
                 controller: _nameController,
                 decoration: const InputDecoration(
                   labelText: 'Tên người nhận',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Số điện thoại',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -182,6 +196,7 @@ class _DiaChiNhanHangScreenState extends State<DiaChiNhanHangScreen> {
                     // Trả về dữ liệu mới cho màn trước
                     Navigator.pop(context, {
                       'name': _nameController.text.trim(),
+                      'phone': _phoneController.text.trim(),
                       'address': getFullAddress(),
                     });
                   },

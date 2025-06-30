@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:luxe_silver_app/views/thanh_toan.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:luxe_silver_app/views/trang_chu_tam.dart';
 import 'constant/app_color.dart';
 import 'views/dang_nhap.dart';
 import 'views/dang_ky.dart';
@@ -27,6 +28,7 @@ class LuxeSilverApp extends StatelessWidget {
       initialRoute: '/login',
       theme: ThemeData(scaffoldBackgroundColor: AppColors.background),
       routes: {
+        //'/': (context) => const GuestHomeScreen(),
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => const SignUpScreen(),
       },

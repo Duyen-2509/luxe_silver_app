@@ -123,21 +123,21 @@ class _ThemNhanVienScreenState extends State<ThemNhanVienScreen> {
                   return null;
                 },
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                controller: _emailController,
-                decoration: const InputDecoration(labelText: 'Email'),
-                keyboardType: TextInputType.emailAddress,
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Vui lòng nhập email';
-                  }
-                  if (!validator.emailValidator(value.trim())) {
-                    return 'Email không hợp lệ';
-                  }
-                  return null;
-                },
-              ),
+              // const SizedBox(height: 12),
+              // TextFormField(
+              //   controller: _emailController,
+              //   decoration: const InputDecoration(labelText: 'Email'),
+              //   keyboardType: TextInputType.emailAddress,
+              //   validator: (value) {
+              //     if (value == null || value.trim().isEmpty) {
+              //       return 'Vui lòng nhập email';
+              //     }
+              //     if (!validator.emailValidator(value.trim())) {
+              //       return 'Email không hợp lệ';
+              //     }
+              //     return null;
+              //   },
+              // ),
               const SizedBox(height: 12),
               // Địa chỉ
               const Text(

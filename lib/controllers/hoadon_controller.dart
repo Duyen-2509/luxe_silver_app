@@ -19,15 +19,56 @@ class HoaDonController {
     return await _repository.addHoaDon(data);
   }
 
-  Future<bool> updateTrangThaiHoaDon(
-    String mahd,
-    int idTtdh, {
-    int? idNv,
-  }) async {
-    return await _repository.updateTrangThaiHoaDon(mahd, idTtdh, idNv: idNv);
+  // Xác nhận đã giao hàng (nhân viên)
+  Future<bool> daGiaoHang(String mahd) async {
+    return await _repository.daGiaoHang(mahd);
   }
 
-  Future<bool> updateNhanVien(String mahd, int idNv) async {
-    return await _repository.updateNhanVien(mahd, idNv);
+  // Xác nhận đã nhận hàng (khách)
+  Future<bool> daNhanHang(String mahd) async {
+    return await _repository.daNhanHang(mahd);
+  }
+
+  // Khách gửi yêu cầu trả hàng
+  Future<bool> traHang(String mahd, String lyDoKh) async {
+    return await _repository.traHang(mahd, lyDoKh);
+  }
+
+  // Khách hủy đơn (chưa giao)
+  Future<bool> huyDon(String mahd, String lyDoKh) async {
+    return await _repository.huyDon(mahd, lyDoKh);
+  }
+
+  // Nhân viên hủy đơn (đã giao hoặc đang xử lý)
+  Future<bool> huyDonNV(String mahd, String lyDoNv) async {
+    return await _repository.huyDonNV(mahd, lyDoNv);
+  }
+
+  // Duyệt trả hàng (nhân viên)
+  Future<bool> duyetTraHang(
+    String mahd,
+    bool pheDuyet, {
+    String? lyDoNv,
+  }) async {
+    return await _repository.duyetTraHang(mahd, pheDuyet, lyDoNv: lyDoNv);
+  }
+
+  // Lấy đơn sắp hết hạn
+  Future<List<Map<String, dynamic>>> getDonSapHetHan() async {
+    return await _repository.getDonSapHetHan();
+  }
+
+  // Lấy đơn chờ trả hàng
+  Future<List<Map<String, dynamic>>> getDonChoTraHang() async {
+    return await _repository.getDonChoTraHang();
+  }
+
+  // Kiểm tra trả hàng
+  Future<Map<String, dynamic>> kiemTraTraHang(String mahd) async {
+    return await _repository.kiemTraTraHang(mahd);
+  }
+
+  Future<bool> ganNhanVien(String mahd, int idNv) async {
+    return await _repository.ganNhanVien(mahd, idNv);
   }
 }
