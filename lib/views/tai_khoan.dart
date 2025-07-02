@@ -27,12 +27,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
   late DateTime ngaysinh;
   late String gioitinh;
   late String role;
-  late double diem;
+  late int diem;
 
   // Hàm lấy id khách hàng an toàn
-  int? get idKh {
-    final idKhRaw = widget.userData['id_kh'] ?? widget.userData['id'];
-    return idKhRaw is int ? idKhRaw : int.tryParse(idKhRaw?.toString() ?? '');
+  int? get currentUserId {
+    if (role == 'khach_hang') {
+      final idKhRaw = widget.userData['id_kh'] ?? widget.userData['id'];
+      return idKhRaw is int ? idKhRaw : int.tryParse(idKhRaw?.toString() ?? '');
+    } else if (role == 'nhan_vien' || role == 'admin') {
+      final idNvRaw = widget.userData['id_nv'] ?? widget.userData['id'];
+      return idNvRaw is int ? idNvRaw : int.tryParse(idNvRaw?.toString() ?? '');
+    }
+    return null;
   }
 
   // Hàm cập nhật profile lên server
@@ -41,25 +47,41 @@ class _ProfileScreenState extends State<ProfileScreen> {
     String successMsg,
     String failMsg,
   ) async {
-    if (idKh == null) {
+    if (currentUserId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Không tìm thấy ID khách hàng!')),
+        const SnackBar(content: Text('Không tìm thấy ID người dùng!')),
       );
       return;
     }
     final apiService = ApiService();
     final userRepository = UserRepository(apiService);
     final userController = UserController(userRepository);
-    final success = await userController.updateProfile(
-      idKh: idKh!,
-      ten: data['ten'],
-      sodienthoai: data['sodienthoai'],
-      email: data['email'],
-      diachi: data['diachi'],
-      ngaysinh: data['ngaysinh'],
-      gioitinh: data['gioitinh'],
-      password: data['password'],
-    );
+
+    bool success = false;
+    if (role == 'khach_hang') {
+      success = await userController.updateProfile(
+        idKh: currentUserId!,
+        ten: data['ten'],
+        sodienthoai: data['sodienthoai'],
+        email: data['email'],
+        diachi: data['diachi'],
+        ngaysinh: data['ngaysinh'],
+        gioitinh: data['gioitinh'],
+        password: data['password'],
+      );
+    } else if (role == 'nhan_vien' || role == 'admin') {
+      final result = await userRepository.updateStaff(
+        idNv: currentUserId!,
+        ten: data['ten'],
+        sodienthoai: data['sodienthoai'],
+        password: data['password'],
+        diachi: data['diachi'],
+        ngaysinh: data['ngaysinh'],
+        gioitinh: data['gioitinh'],
+      );
+      success = result['success'] == true || result['status'] == true;
+    }
+
     if (success) {
       ScaffoldMessenger.of(
         context,
@@ -76,25 +98,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final userRepository = UserRepository(apiService);
     final userController = UserController(userRepository);
 
-    // hàm getUserById trong userController
-    final user = await userController.getUserById(idKh!);
+    Map<String, dynamic>? user;
+    if (role == 'khach_hang') {
+      user = await userController.getUserById(currentUserId!);
+    } else if (role == 'nhan_vien' || role == 'admin') {
+      user = await userController.getStaffById(currentUserId!);
+    }
+
     if (user != null) {
       setState(() {
-        name = user['ten'] ?? '';
-        sdt = user['sodienthoai'] ?? '';
-        email = user['email'] ?? '';
-        dc = user['diachi'] ?? '';
+        final currentUser = user!;
+
+        name = currentUser['ten'] ?? '';
+        sdt = currentUser['sodienthoai'] ?? '';
+        dc = currentUser['diachi'] ?? '';
         ngaysinh =
-            DateTime.tryParse(user['ngaysinh'] ?? '') ?? DateTime(2000, 1, 1);
-        gioitinh = user['gioitinh'] ?? '';
-        diem =
-            user['diem'] != null
-                ? (user['diem'] is int
-                    ? (user['diem'] as int).toDouble()
-                    : double.tryParse(user['diem'].toString()) ?? 0)
-                : 0;
-        widget.userData.clear();
-        widget.userData.addAll(user);
+            DateTime.tryParse(currentUser['ngaysinh'] ?? '') ??
+            DateTime(2000, 1, 1);
+        gioitinh = currentUser['gioitinh'] ?? '';
+
+        if (role == 'khach_hang') {
+          email = currentUser['email'] ?? '';
+          diem =
+              currentUser['diem'] != null
+                  ? (currentUser['diem'] is int
+                      ? currentUser['diem']
+                      : (currentUser['diem'] is double
+                          ? (currentUser['diem'] as double).toInt()
+                          : int.tryParse(currentUser['diem'].toString()) ?? 0))
+                  : 0;
+        } else {
+          email = '';
+        }
       });
     }
   }
@@ -103,7 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     print(
-      'Thông tin truyền vào ProfileScreen: ${widget.userData}',
+      'Thông tin truyền vào ProfileScreen%%%%%%%%%%%%%%: ${widget.userData}',
     ); // In ra dữ liệu
     // Lấy dữ liệu từ userData
     name = widget.userData['ten'] ?? '';
@@ -117,15 +152,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     role = widget.userData['role'] ?? '';
     final rawDiem = widget.userData['diem'];
     if (rawDiem is int) {
-      diem = rawDiem.toDouble();
-    } else if (rawDiem is double) {
+      diem = rawDiem.toInt();
+    } else if (rawDiem is int) {
       diem = rawDiem;
     } else if (rawDiem is String) {
-      diem = double.tryParse(rawDiem) ?? 0;
+      diem = int.tryParse(rawDiem) ?? 0;
     } else {
       diem = 0;
     }
-    // Sửa tại đây: chỉ reload nếu là khách hàng
+    // // Sửa tại đây: chỉ reload nếu là khách hàng
+    if (role == 'khach_hang') {
+      reloadUserData();
+    }
+    if (currentUserId != null) {
+      reloadUserData();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
     if (role == 'khach_hang') {
       reloadUserData();
     }
@@ -144,105 +190,67 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Row(
-              //   children: [
-              //     IconButton(
-              //       icon: Icon(Icons.arrow_back),
-              //       onPressed: () {
-              //         Navigator.pop(context);
-              //       },
-              //     ),
-
-              //     const Text(
-              //       'Thông Tin Cá Nhân',
-              //       style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              //     ),
-              //   ],
-              // ),
-
-              // Ảnh đại diện
-              Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.black),
+        child: RefreshIndicator(
+          onRefresh: reloadUserData,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                // Ảnh đại diện
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.black),
+                  ),
+                  child: CircleAvatar(
+                    radius: 50,
+                    backgroundImage:
+                        FirebaseAuth.instance.currentUser?.photoURL != null
+                            ? NetworkImage(
+                              FirebaseAuth.instance.currentUser!.photoURL!,
+                            )
+                            : const AssetImage(AppImages.avatar)
+                                as ImageProvider,
+                    backgroundColor: Colors.transparent,
+                  ),
                 ),
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundImage:
-                      FirebaseAuth.instance.currentUser?.photoURL != null
-                          ? NetworkImage(
-                            FirebaseAuth.instance.currentUser!.photoURL!,
-                          )
-                          : const AssetImage(AppImages.avatar) as ImageProvider,
-                  backgroundColor: Colors.transparent,
-                ),
-              ),
-              const SizedBox(height: 10),
-              // if (role.trim().toLowerCase() == 'khach_hang')
-              //   Text(
-              //     '${diem.toStringAsFixed(3)} điểm',
-              //     style: const TextStyle(fontSize: 16, color: Colors.pink),
-              //   )
-              // else
-              if (role.trim().toLowerCase() == 'admin')
-                Text(
-                  'Admin',
-                  style: const TextStyle(fontSize: 16, color: Colors.pink),
-                )
-              else if (role.trim().toLowerCase() == 'nhan_vien')
-                Text(
-                  'Nhân viên',
-                  style: const TextStyle(fontSize: 16, color: Colors.pink),
-                ),
+                const SizedBox(height: 10),
+                if (role.trim().toLowerCase() == 'admin')
+                  Text(
+                    'Admin',
+                    style: const TextStyle(fontSize: 16, color: Colors.pink),
+                  )
+                else if (role.trim().toLowerCase() == 'nhan_vien')
+                  Text(
+                    'Nhân viên',
+                    style: const TextStyle(fontSize: 16, color: Colors.pink),
+                  )
+                else
+                  Text(
+                    '$diem điểm',
+                    style: const TextStyle(fontSize: 16, color: Colors.pink),
+                  ),
 
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              // Họ tên
-              ListTile(
-                leading: const Icon(Icons.person),
-                title: const Text('Họ Tên'),
-                subtitle: Text('$name'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    showNameDialog(context, name, (newName) async {
-                      setState(() {
-                        name = newName;
-                      });
-                      await updateProfileOnServer(
-                        {'ten': newName},
-                        'Cập nhật tên thành công!',
-                        'Cập nhật tên thất bại!',
-                      );
-                      await reloadUserData();
-                    });
-                  },
-                ),
-              ),
-              const Divider(),
-
-              // Số điện thoại
-              if (role.trim().toLowerCase() != 'admin') ...[
+                // Họ tên
                 ListTile(
-                  leading: const Icon(Icons.phone),
-                  title: const Text('Số điện thoại'),
-                  subtitle: Text(sdt),
+                  leading: const Icon(Icons.person),
+                  title: const Text('Họ Tên'),
+                  subtitle: Text('$name'),
                   trailing: IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () {
-                      showPhoneDialog(context, sdt, (newPhone) async {
+                      showNameDialog(context, name, (newName) async {
                         setState(() {
-                          sdt = newPhone;
+                          name = newName;
                         });
                         await updateProfileOnServer(
-                          {'sodienthoai': newPhone},
-                          'Cập nhật số điện thoại thành công!',
-                          'Cập nhật số điện thoại thất bại!',
+                          {'ten': newName},
+                          'Cập nhật tên thành công!',
+                          'Cập nhật tên thất bại!',
                         );
                         await reloadUserData();
                       });
@@ -250,143 +258,172 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ),
                 ),
                 const Divider(),
-              ],
 
-              // Email
-              if ((role.trim().toLowerCase() != 'admin') &&
-                  (role.trim().toLowerCase() != 'nhan_vien')) ...[
-                ListTile(
-                  leading: const Icon(Icons.email),
-                  title: const Text('Email'),
-                  subtitle: Text(email),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () {
-                      showEmailDialog(context, email, (newEmail) async {
-                        setState(() {
-                          email = newEmail;
+                // Số điện thoại
+                if (role.trim().toLowerCase() != 'admin') ...[
+                  ListTile(
+                    leading: const Icon(Icons.phone),
+                    title: const Text('Số điện thoại'),
+                    subtitle: Text(sdt),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () {
+                        showPhoneDialog(context, sdt, (newPhone) async {
+                          setState(() {
+                            sdt = newPhone;
+                          });
+                          await updateProfileOnServer(
+                            {'sodienthoai': newPhone},
+                            'Cập nhật số điện thoại thành công!',
+                            'Cập nhật số điện thoại thất bại!',
+                          );
+                          await reloadUserData();
                         });
-                        await updateProfileOnServer(
-                          {'email': newEmail},
-                          'Cập nhật email thành công!',
-                          'Cập nhật email thất bại!',
-                        );
-                        await reloadUserData();
-                      });
-                    },
-                  ),
-                ),
-                const Divider(),
-              ],
-
-              // Địa chỉ
-              ListTile(
-                leading: const Icon(Icons.map),
-                title: const Text('Địa chỉ'),
-                subtitle: Text(dc),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    showAddressDialog(context, dc, (newAddress) async {
-                      setState(() {
-                        dc = newAddress;
-                      });
-                      await updateProfileOnServer(
-                        {'diachi': newAddress},
-                        'Cập nhật địa chỉ thành công!',
-                        'Cập nhật địa chỉ thất bại!',
-                      );
-                      await reloadUserData();
-                    });
-                  },
-                ),
-              ),
-              const Divider(),
-
-              // Ngày sinh
-              ListTile(
-                leading: const Icon(Icons.cake),
-                title: const Text('Ngày sinh'),
-                subtitle: Text(
-                  '${ngaysinh.day}/${ngaysinh.month}/${ngaysinh.year}',
-                ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () async {
-                    await showEditBirthdayDialog(context);
-                    await updateProfileOnServer(
-                      {
-                        'ngaysinh':
-                            '${ngaysinh.year}-${ngaysinh.month.toString().padLeft(2, '0')}-${ngaysinh.day.toString().padLeft(2, '0')}',
                       },
-                      'Cập nhật ngày sinh thành công!',
-                      'Cập nhật ngày sinh thất bại!',
-                    );
-                    await reloadUserData();
-                  },
-                ),
-              ),
-              const Divider(),
+                    ),
+                  ),
+                  const Divider(),
+                ],
 
-              // Giới tính
-              ListTile(
-                leading: const Icon(Icons.wc),
-                title: const Text('Giới tính'),
-                subtitle: Text(gioitinh),
-                trailing: IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: () {
-                    showGenderDialog(context, gioitinh, (newGender) async {
-                      setState(() {
-                        gioitinh = newGender;
-                      });
-                      await updateProfileOnServer(
-                        {'gioitinh': newGender},
-                        'Cập nhật giới tính thành công!',
-                        'Cập nhật giới tính thất bại!',
-                      );
-                      await reloadUserData();
-                    });
-                  },
-                ),
-              ),
-              const Divider(),
+                // Email
+                if ((role.trim().toLowerCase() != 'admin') &&
+                    (role.trim().toLowerCase() != 'nhan_vien')) ...[
+                  ListTile(
+                    leading: const Icon(Icons.email),
+                    title: const Text('Email'),
+                    subtitle: Text(email),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () {
+                        showEmailDialog(context, email, (newEmail) async {
+                          setState(() {
+                            email = newEmail;
+                          });
+                          await updateProfileOnServer(
+                            {'email': newEmail},
+                            'Cập nhật email thành công!',
+                            'Cập nhật email thất bại!',
+                          );
+                          await reloadUserData();
+                        });
+                      },
+                    ),
+                  ),
+                  const Divider(),
+                ],
 
-              // Đổi mật khẩu
-              if (role != 'admin')
+                // Địa chỉ
                 ListTile(
-                  leading: const Icon(Icons.lock),
-                  title: const Text('Đổi mật khẩu'),
+                  leading: const Icon(Icons.map),
+                  title: const Text('Địa chỉ'),
+                  subtitle: Text(dc),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () {
+                      showAddressDialog(context, dc, (newAddress) async {
+                        setState(() {
+                          dc = newAddress;
+                        });
+                        await updateProfileOnServer(
+                          {'diachi': newAddress},
+                          'Cập nhật địa chỉ thành công!',
+                          'Cập nhật địa chỉ thất bại!',
+                        );
+                        await reloadUserData();
+                      });
+                    },
+                  ),
+                ),
+                const Divider(),
+
+                // Ngày sinh
+                ListTile(
+                  leading: const Icon(Icons.cake),
+                  title: const Text('Ngày sinh'),
+                  subtitle: Text(
+                    '${ngaysinh.day}/${ngaysinh.month}/${ngaysinh.year}',
+                  ),
                   trailing: IconButton(
                     icon: const Icon(Icons.edit),
                     onPressed: () async {
-                      showChangePasswordDialog(context: context, idKh: idKh);
+                      await showEditBirthdayDialog(context);
+                      await updateProfileOnServer(
+                        {
+                          'ngaysinh':
+                              '${ngaysinh.year}-${ngaysinh.month.toString().padLeft(2, '0')}-${ngaysinh.day.toString().padLeft(2, '0')}',
+                        },
+                        'Cập nhật ngày sinh thành công!',
+                        'Cập nhật ngày sinh thất bại!',
+                      );
                       await reloadUserData();
                     },
                   ),
                 ),
+                const Divider(),
 
-              const SizedBox(height: 20),
-              // Nút đăng xuất
-              ElevatedButton(
-                onPressed: () async {
-                  await signOutAll();
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/login',
-                    (route) => false,
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(50),
-                  backgroundColor: AppColors.buttonBackground,
+                // Giới tính
+                ListTile(
+                  leading: const Icon(Icons.wc),
+                  title: const Text('Giới tính'),
+                  subtitle: Text(gioitinh),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.edit),
+                    onPressed: () {
+                      showGenderDialog(context, gioitinh, (newGender) async {
+                        setState(() {
+                          gioitinh = newGender;
+                        });
+                        await updateProfileOnServer(
+                          {'gioitinh': newGender},
+                          'Cập nhật giới tính thành công!',
+                          'Cập nhật giới tính thất bại!',
+                        );
+                        await reloadUserData();
+                      });
+                    },
+                  ),
                 ),
-                child: const Text(
-                  'Đăng xuất',
-                  style: TextStyle(color: AppColors.buttonText),
+                const Divider(),
+
+                // Đổi mật khẩu
+                if (role != 'admin')
+                  ListTile(
+                    leading: const Icon(Icons.lock),
+                    title: const Text('Đổi mật khẩu'),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.edit),
+                      onPressed: () async {
+                        showChangePasswordDialog(
+                          context: context,
+                          idKh: currentUserId,
+                        );
+                        await reloadUserData();
+                      },
+                    ),
+                  ),
+
+                const SizedBox(height: 20),
+                // Nút đăng xuất
+                ElevatedButton(
+                  onPressed: () async {
+                    await signOutAll();
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      '/login',
+                      (route) => false,
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(50),
+                    backgroundColor: AppColors.buttonBackground,
+                  ),
+                  child: const Text(
+                    'Đăng xuất',
+                    style: TextStyle(color: AppColors.buttonText),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

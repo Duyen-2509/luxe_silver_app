@@ -22,4 +22,19 @@ class VoucherController {
   Future<bool> editVoucher(int id, Map<String, dynamic> voucherData) async {
     return await _repository.updateVoucher(id, voucherData);
   }
+
+  // ẩn
+  Future<bool> hideVoucher(int id) async {
+    return await _repository.hideVoucher(id);
+  }
+
+  //giảm
+  Future<bool> useVoucher(int id) async {
+    return await _repository.useVoucher(id);
+  }
+
+  // Mở lại voucher
+  Future<bool> showVoucher(int id) async {
+    return await _repository.showVoucher(id);
+  }
 }

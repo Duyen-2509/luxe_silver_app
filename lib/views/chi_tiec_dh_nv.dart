@@ -390,6 +390,13 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
             Icons.discount,
             isDiscount: true,
           ),
+          if ((hoaDonInfo?['diem_sudung'] ?? 0) > 0)
+            _buildSummaryRow(
+              'Sử dụng điểm',
+              '-${formatPrice(hoaDonInfo?['diem_sudung'])}',
+              Icons.star,
+              isDiscount: true,
+            ),
           const SizedBox(height: 12),
           const Divider(thickness: 1.5),
           const SizedBox(height: 12),
@@ -472,6 +479,10 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
       case 5: // Đã hủy
         return _buildCancelledOrderInfo();
       case 6: // Trả hàng
+
+        if (hoaDonInfo?['trangthai'] == 3) {
+          return _buildApproveRejectReturnButtons();
+        }
         return _buildReturnOrderInfo();
       default:
         return const SizedBox.shrink();
@@ -485,6 +496,15 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
         Expanded(
           child: OutlinedButton.icon(
             onPressed: () async {
+              final idNvRaw = widget.userData['id_nv'];
+              final int? idNv =
+                  idNvRaw is int
+                      ? idNvRaw
+                      : int.tryParse(idNvRaw?.toString() ?? '');
+              if (idNv == null) {
+                _showSnackBar('Không xác định được mã nhân viên!', Colors.red);
+                return;
+              }
               String? lyDo = await showDialog<String>(
                 context: context,
                 builder: (context) {
@@ -515,13 +535,21 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
                 _showSnackBar('Vui lòng nhập lý do hủy đơn!', Colors.red);
                 return;
               }
-              final ok = await hoaDonController.huyDonNV(widget.mahd, lyDo);
+              final ok = await hoaDonController.huyDonNV(
+                widget.mahd,
+                lyDo,
+                idNv,
+              );
               if (ok && mounted) {
                 _showSnackBar('Đã hủy đơn hàng', Colors.red);
                 setState(() {
                   hoaDonInfo?['id_ttdh'] = 5;
                   hoaDonInfo?['ten_trangthai'] = 'Đã hủy';
+                  hoaDonInfo?['id_nv'] = idNv;
+                  hoaDonInfo?['ten_nhanvien'] = widget.userData['ten'];
                 });
+                await _fetchHoaDonInfo();
+                setState(() {});
               }
             },
             icon: const Icon(Icons.cancel_outlined),
@@ -555,12 +583,14 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
                 _showSnackBar('Không xác định được mã nhân viên!', Colors.red);
                 return;
               }
-              // Gán nhân viên xử lý cho đơn hàng (nếu backend tự động chuyển trạng thái)
+              // Gán nhân viên xử lý cho đơn hàng
               final okNv = await hoaDonController.ganNhanVien(
                 widget.mahd,
                 idNv,
               );
-              if (okNv && mounted) {
+              // Gọi API cập nhật trạng thái sang Đang xử lý
+              final okTrangThai = await hoaDonController.dangXuLy(widget.mahd);
+              if (okNv && okTrangThai && mounted) {
                 _showSnackBar('Đã xác nhận đơn', Colors.green);
                 setState(() {
                   hoaDonInfo?['id_ttdh'] = 2;
@@ -568,6 +598,9 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
                   hoaDonInfo?['id_nv'] = idNv;
                   hoaDonInfo?['ten_nhanvien'] = tenNv;
                 });
+                await _fetchHoaDonInfo();
+              } else {
+                _showSnackBar('Cập nhật trạng thái thất bại!', Colors.red);
               }
             },
             icon: const Icon(Icons.check),
@@ -595,13 +628,31 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
       width: double.infinity,
       child: ElevatedButton.icon(
         onPressed: () async {
+          final idNvRaw = widget.userData['id_nv'];
+          final int? idNv =
+              idNvRaw is int
+                  ? idNvRaw
+                  : int.tryParse(idNvRaw?.toString() ?? '');
+          final tenNv = widget.userData['ten'];
+          if (idNv == null) {
+            _showSnackBar('Không xác định được mã nhân viên!', Colors.red);
+            return;
+          }
+          // Gán nhân viên xử lý cho đơn hàng (nếu chưa có hoặc muốn cập nhật lại)
+          final okNv = await hoaDonController.ganNhanVien(widget.mahd, idNv);
+          // Chuyển trạng thái sang Đang giao
           final ok = await hoaDonController.daGiaoHang(widget.mahd);
-          if (ok && mounted) {
+          if (okNv && ok && mounted) {
             _showSnackBar('Đã chuyển sang trạng thái Đang giao', Colors.blue);
             setState(() {
               hoaDonInfo?['id_ttdh'] = 3;
               hoaDonInfo?['ten_trangthai'] = 'Đang giao';
+              hoaDonInfo?['id_nv'] = idNv;
+              hoaDonInfo?['ten_nhanvien'] = tenNv;
             });
+            await _fetchHoaDonInfo();
+          } else {
+            _showSnackBar('Cập nhật trạng thái thất bại!', Colors.red);
           }
         },
         icon: const Icon(Icons.local_shipping),
@@ -618,25 +669,166 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
   }
 
   Widget _buildCompleteButton() {
-    return SizedBox(
-      width: double.infinity,
+    // Kiểm tra trạng thái đơn hàng
+    final idTtdh = hoaDonInfo?['id_ttdh'];
+    final trangThai = hoaDonInfo?['trangthai'];
+
+    // Nếu đã xác nhận giao tới
+    if (idTtdh == 3 && trangThai == 1) {
+      return Row(
+        children: [
+          // Nút Thu hồi
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: () async {
+                final idNvRaw = widget.userData['id_nv'];
+                final int? idNv =
+                    idNvRaw is int
+                        ? idNvRaw
+                        : int.tryParse(idNvRaw?.toString() ?? '');
+                if (idNv == null) {
+                  _showSnackBar(
+                    'Không xác định được mã nhân viên!',
+                    Colors.red,
+                  );
+                  return;
+                }
+                String? lyDo = await showDialog<String>(
+                  context: context,
+                  builder: (context) {
+                    String input = '';
+                    return AlertDialog(
+                      title: const Text('Lý do thu hồi hàng trả'),
+                      content: TextField(
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          hintText: 'Nhập lý do thu hồi hàng trả',
+                        ),
+                        onChanged: (value) => input = value,
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Hủy'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(input),
+                          child: const Text('Xác nhận'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+                if (lyDo == null || lyDo.trim().isEmpty) {
+                  _showSnackBar(
+                    'Vui lòng nhập lý do thu hồi hàng trả!',
+                    Colors.red,
+                  );
+                  return;
+                }
+                // Gọi API thu hồi hàng trả
+                final ok = await hoaDonController.thuHoiHang(
+                  widget.mahd,
+                  lyDo,
+                  idNv,
+                );
+                if (ok && mounted) {
+                  _showSnackBar(
+                    'Đã chuyển sang trạng thái trả hàng',
+                    Colors.orange,
+                  );
+                  setState(() {
+                    hoaDonInfo?['id_ttdh'] = 6;
+                    hoaDonInfo?['ten_trangthai'] = 'Trả hàng';
+                    hoaDonInfo?['id_nv'] = idNv;
+                    hoaDonInfo?['ten_nhanvien'] = widget.userData['ten'];
+                  });
+                  await _fetchHoaDonInfo();
+                  setState(() {});
+                }
+              },
+              icon: const Icon(Icons.undo),
+              label: const Text('Thu hồi'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.orange,
+                side: const BorderSide(color: Colors.orange),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Nút Đã giao tới
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                final idNvRaw = widget.userData['id_nv'];
+                final int? idNv =
+                    idNvRaw is int
+                        ? idNvRaw
+                        : int.tryParse(idNvRaw?.toString() ?? '');
+                final tenNv = widget.userData['ten'];
+                if (idNv == null) {
+                  _showSnackBar(
+                    'Không xác định được mã nhân viên!',
+                    Colors.red,
+                  );
+                  return;
+                }
+                // Gán nhân viên xử lý cho đơn hàng (nếu chưa có hoặc muốn cập nhật lại)
+                final okNv = await hoaDonController.ganNhanVien(
+                  widget.mahd,
+                  idNv,
+                );
+                // Chuyển chờ xử lý
+                final ok = await hoaDonController.daGiaoHang(widget.mahd);
+                if (okNv && ok && mounted) {
+                  _showSnackBar('Đã xác nhận khách đã nhận hàng', Colors.green);
+                  setState(() {
+                    hoaDonInfo?['id_ttdh'] = 4;
+                    hoaDonInfo?['ten_trangthai'] = 'Đã nhận';
+                    hoaDonInfo?['id_nv'] = idNv;
+                    hoaDonInfo?['ten_nhanvien'] = tenNv;
+                  });
+                  await _fetchHoaDonInfo();
+                } else {
+                  _showSnackBar('Cập nhật trạng thái thất bại!', Colors.red);
+                }
+              },
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('Đã giao tới'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+    return Center(
       child: ElevatedButton.icon(
-        onPressed: () async {
-          final ok = await hoaDonController.daNhanHang(widget.mahd);
-          if (ok && mounted) {
-            _showSnackBar('Đã xác nhận khách đã nhận hàng', Colors.green);
-            setState(() {
-              hoaDonInfo?['id_ttdh'] = 4;
-              hoaDonInfo?['ten_trangthai'] = 'Đã nhận';
-            });
-          }
-        },
-        icon: const Icon(Icons.check_circle_outline),
-        label: const Text('Đã nhận hàng'),
+        onPressed: null,
+        icon: const Icon(Icons.hourglass_top),
+        label: const Text('Đang chờ xử lý nhận hàng'),
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.green,
+          backgroundColor: Colors.grey,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 14),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         ),
@@ -682,6 +874,8 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
   }
 
   Widget _buildCancelledOrderInfo() {
+    final lyDoKh = hoaDonInfo?['ly_do_kh'];
+    final lyDoNv = hoaDonInfo?['ly_do_nv'];
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -690,14 +884,15 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
         border: Border.all(color: Colors.red[200]!),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.cancel, color: Colors.red[600], size: 24),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Đơn hàng đã bị hủy',
                   style: TextStyle(
                     fontSize: 16,
@@ -705,11 +900,31 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
                     color: Colors.red,
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
+                const SizedBox(height: 4),
+                const Text(
                   'Đơn hàng này đã được hủy.',
                   style: TextStyle(fontSize: 14, color: Colors.red),
                 ),
+                if (lyDoKh != null && lyDoKh.toString().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Lý do khách từ chối: $lyDoKh',
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+                if (lyDoNv != null && lyDoNv.toString().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Lý do nhân viên từ chối: $lyDoNv',
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -719,6 +934,9 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
   }
 
   Widget _buildReturnOrderInfo() {
+    final lyDoKh = hoaDonInfo?['ly_do_kh'];
+    final lyDoNv = hoaDonInfo?['ly_do_nv'];
+    final trangThai = hoaDonInfo?['trangthai'];
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -727,31 +945,172 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
         border: Border.all(color: Colors.orange[200]!),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.keyboard_return, color: Colors.orange[600], size: 24),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Đang xử lý trả hàng',
-                  style: TextStyle(
+                  trangThai == 1
+                      ? 'Trả hàng thành công'
+                      : 'Đang xử lý trả hàng',
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.orange,
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  'Yêu cầu trả hàng đang được xử lý.',
-                  style: TextStyle(fontSize: 14, color: Colors.orange),
-                ),
+                const SizedBox(height: 4),
+                if (trangThai != 1)
+                  const Text(
+                    'Yêu cầu trả hàng đang được xử lý.',
+                    style: TextStyle(fontSize: 14, color: Colors.orange),
+                  ),
+                if (lyDoKh != null && lyDoKh.toString().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Lý do khách trả hàng: $lyDoKh',
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+                if (lyDoNv != null && lyDoNv.toString().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'NV: $lyDoNv',
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildApproveRejectReturnButtons() {
+    return Row(
+      children: [
+        // Nút Không duyệt
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () async {
+              String? lyDo = await showDialog<String>(
+                context: context,
+                builder: (context) {
+                  String input = '';
+                  return AlertDialog(
+                    title: const Text('Lý do không duyệt trả hàng'),
+                    content: TextField(
+                      autofocus: true,
+                      decoration: const InputDecoration(
+                        hintText: 'Nhập lý do không duyệt',
+                      ),
+                      onChanged: (value) => input = value,
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        child: const Text('Hủy'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.of(context).pop(input),
+                        child: const Text('Xác nhận'),
+                      ),
+                    ],
+                  );
+                },
+              );
+              if (lyDo == null || lyDo.trim().isEmpty) {
+                _showSnackBar('Vui lòng nhập lý do!', Colors.red);
+                return;
+              }
+              final idNvRaw = widget.userData['id_nv'];
+              final int? idNv =
+                  idNvRaw is int
+                      ? idNvRaw
+                      : int.tryParse(idNvRaw?.toString() ?? '');
+              if (idNv == null) {
+                _showSnackBar('Không xác định được mã nhân viên!', Colors.red);
+                return;
+              }
+              final ok = await hoaDonController.duyetTraHang(
+                widget.mahd,
+                false,
+                lyDoNv: lyDo,
+                idNv: idNv,
+              );
+              if (ok && mounted) {
+                _showSnackBar('Đã từ chối yêu cầu trả hàng', Colors.red);
+                await _fetchHoaDonInfo();
+              }
+            },
+            icon: const Icon(Icons.cancel),
+            label: const Text('Không duyệt'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.red,
+              side: const BorderSide(color: Colors.red),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Nút Duyệt
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              final idNvRaw = widget.userData['id_nv'];
+              final int? idNv =
+                  idNvRaw is int
+                      ? idNvRaw
+                      : int.tryParse(idNvRaw?.toString() ?? '');
+              if (idNv == null) {
+                _showSnackBar('Không xác định được mã nhân viên!', Colors.red);
+                return;
+              }
+              final ok = await hoaDonController.duyetTraHang(
+                widget.mahd,
+                true,
+                idNv: idNv,
+              );
+              if (ok && mounted) {
+                _showSnackBar('Đã duyệt trả hàng', Colors.green);
+                await _fetchHoaDonInfo();
+              }
+            },
+            icon: const Icon(Icons.check_circle),
+            label: const Text('Duyệt'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

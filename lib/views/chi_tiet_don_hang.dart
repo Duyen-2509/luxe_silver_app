@@ -973,7 +973,13 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
             Icons.discount,
             isDiscount: true,
           ),
-
+          if ((hoaDonInfo?['diem_sudung'] ?? 0) > 0)
+            _buildSummaryRow(
+              'Sử dụng điểm',
+              '-${formatPrice(hoaDonInfo?['diem_sudung'])}',
+              Icons.star,
+              isDiscount: true,
+            ),
           const SizedBox(height: 12),
           const Divider(thickness: 1.5),
           const SizedBox(height: 12),
@@ -1145,6 +1151,9 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
 
   /// Widget thông tin đơn hàng đã hoàn thành
   Widget _buildCompletedOrderInfo() {
+    final tongGiaSp = hoaDonInfo?['tong_gia_sp'] ?? 0;
+    final diemCong = (tongGiaSp * 0.005).round();
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1156,11 +1165,11 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
         children: [
           Icon(Icons.check_circle, color: Colors.green[600], size: 24),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Đơn hàng đã hoàn thành',
                   style: TextStyle(
                     fontSize: 16,
@@ -1168,10 +1177,15 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
                     color: Colors.green,
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
+                const SizedBox(height: 4),
+                const Text(
                   'Cảm ơn bạn đã mua hàng! Hãy đánh giá sản phẩm để chia sẻ trải nghiệm.',
                   style: TextStyle(fontSize: 14, color: Colors.green),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Bạn được cộng $diemCong điểm vào tài khoản',
+                  style: const TextStyle(fontSize: 14, color: Colors.green),
                 ),
               ],
             ),
@@ -1183,6 +1197,8 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
 
   /// Widget thông tin đơn hàng đã hủy
   Widget _buildCancelledOrderInfo() {
+    final lyDoKh = hoaDonInfo?['ly_do_kh'];
+    final lyDoNv = hoaDonInfo?['ly_do_nv'];
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1191,14 +1207,15 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
         border: Border.all(color: Colors.red[200]!),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.cancel, color: Colors.red[600], size: 24),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Đơn hàng đã bị hủy',
                   style: TextStyle(
                     fontSize: 16,
@@ -1206,11 +1223,31 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
                     color: Colors.red,
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
+                const SizedBox(height: 4),
+                const Text(
                   'Đơn hàng này đã được hủy.',
                   style: TextStyle(fontSize: 14, color: Colors.red),
                 ),
+                if (lyDoKh != null && lyDoKh.toString().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Lý do khách từ chối: $lyDoKh',
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+                if (lyDoNv != null && lyDoNv.toString().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Lý do nhân viên từ chối: $lyDoNv',
+                    style: const TextStyle(
+                      color: Colors.red,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1219,8 +1256,9 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     );
   }
 
-  /// Widget thông tin đơn hàng trả hàng
   Widget _buildReturnOrderInfo() {
+    final lyDoKh = hoaDonInfo?['ly_do_kh'];
+    final lyDoNv = hoaDonInfo?['ly_do_nv'];
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1229,26 +1267,51 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
         border: Border.all(color: Colors.orange[200]!),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.keyboard_return, color: Colors.orange[600], size: 24),
           const SizedBox(width: 12),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Đang xử lý trả hàng',
-                  style: TextStyle(
+                  (hoaDonInfo?['id_ttdh'] == 6 && hoaDonInfo?['trangthai'] == 1)
+                      ? 'Trả hàng thành công'
+                      : 'Đang xử lý trả hàng',
+                  style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
                     color: Colors.orange,
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  'Yêu cầu trả hàng của bạn đang được xử lý. Chúng tôi sẽ liên hệ với bạn sớm nhất.',
-                  style: TextStyle(fontSize: 14, color: Colors.orange),
-                ),
+                const SizedBox(height: 4),
+                if (!(hoaDonInfo?['id_ttdh'] == 6 &&
+                    hoaDonInfo?['trangthai'] == 1))
+                  const Text(
+                    'Yêu cầu trả hàng của bạn đang được xử lý.',
+                    style: TextStyle(fontSize: 14, color: Colors.orange),
+                  ),
+                if (lyDoKh != null && lyDoKh.toString().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'Lý do khách trả hàng: $lyDoKh',
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+                if (lyDoNv != null && lyDoNv.toString().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    'NV: $lyDoNv',
+                    style: const TextStyle(
+                      color: Colors.orange,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

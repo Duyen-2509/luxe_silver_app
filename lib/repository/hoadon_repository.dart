@@ -40,6 +40,8 @@ class HoaDonRepository {
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
+    print('Status: ${response.statusCode}');
+    print('Body: ${response.body}');
     if (response.statusCode == 200) {
       return json.decode(response.body);
     }
@@ -85,11 +87,11 @@ class HoaDonRepository {
   }
 
   // Nhân viên hủy đơn (đã giao hoặc đang xử lý)
-  Future<bool> huyDonNV(String mahd, String lyDoNv) async {
+  Future<bool> huyDonNV(String mahd, String lyDoNv, int idNv) async {
     final response = await http.post(
       Uri.parse('${baseUrl}hoadon/$mahd/huy-nv'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'ly_do_nv': lyDoNv}),
+      body: jsonEncode({'ly_do_nv': lyDoNv, 'id_nv': idNv}),
     );
     return response.statusCode == 200;
   }
@@ -99,9 +101,11 @@ class HoaDonRepository {
     String mahd,
     bool pheDuyet, {
     String? lyDoNv,
+    int? idNv,
   }) async {
     final Map<String, dynamic> body = {'pheduyet': pheDuyet};
     if (lyDoNv != null) body['ly_do_nv'] = lyDoNv;
+    if (idNv != null) body['id_nv'] = idNv;
     final response = await http.post(
       Uri.parse('${baseUrl}hoadon/$mahd/duyet-tra-hang'),
       headers: {'Content-Type': 'application/json'},
@@ -145,6 +149,24 @@ class HoaDonRepository {
       Uri.parse('${baseUrl}hoadon/$mahd/gan-nhan-vien'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'id_nv': idNv}),
+    );
+    return response.statusCode == 200;
+  }
+
+  // Đánh dấu đơn hàng đang được xử lý
+  Future<bool> dangXuLy(String mahd) async {
+    final response = await http.post(
+      Uri.parse('${baseUrl}hoadon/$mahd/dang-xu-ly'),
+      headers: {'Content-Type': 'application/json'},
+    );
+    return response.statusCode == 200;
+  }
+
+  Future<bool> thuHoiHang(String mahd, String lyDoNv, int idNv) async {
+    final response = await http.post(
+      Uri.parse('${baseUrl}hoadon/$mahd/thu-hoi-hang'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'ly_do_nv': lyDoNv, 'id_nv': idNv}),
     );
     return response.statusCode == 200;
   }

@@ -51,4 +51,28 @@ class VoucherRepository {
     );
     return response.statusCode == 200;
   }
+
+  // Ẩn vouvher
+  Future<bool> hideVoucher(int id) async {
+    final response = await http.post(
+      Uri.parse('${ApiService().baseUrl}voucher/hide/$id'),
+    );
+    return response.statusCode == 200;
+  }
+
+  // giảm
+  Future<bool> useVoucher(int id) async {
+    final response = await http.post(
+      Uri.parse('${ApiService().baseUrl}voucher/use/$id'),
+    );
+    return response.statusCode == 200;
+  }
+
+  // Mở lại voucher
+  Future<bool> showVoucher(int id) async {
+    final response = await http.post(
+      Uri.parse('${ApiService().baseUrl}voucher/show/$id'),
+    );
+    return response.statusCode == 200;
+  }
 }

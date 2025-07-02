@@ -71,8 +71,22 @@ class _VoucherScreenState extends State<VoucherScreen> {
             return Center(child: Text('Không có voucher nào'));
           }
 
-          final vouchers = snapshot.data!;
-
+          // final vouchers = snapshot.data!;
+          final now = DateTime.now();
+          final vouchers =
+              snapshot.data!
+                  .where(
+                    (v) =>
+                        isAdmin ||
+                        ((v['trangthai'] == 1 || v['trangthai'] == null) &&
+                            (v['soluong'] ?? 0) > 0 &&
+                            (v['ngayketthuc'] == null ||
+                                DateTime.tryParse(
+                                      v['ngayketthuc'].toString(),
+                                    )?.isAfter(now) ==
+                                    true)),
+                  )
+                  .toList();
           if (selectedVoucher != null)
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),

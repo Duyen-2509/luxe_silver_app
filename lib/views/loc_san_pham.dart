@@ -43,27 +43,11 @@ class _ProductFilterScreenState extends State<ProductFilterScreen>
     // Chỉ chia tab nếu là "Sản phẩm ẩn"
     if (nhomLower == 'sản phẩm ẩn') {
       final hiddenProducts =
-          widget.products
-              .where((sp) => (sp.trangthai == 0) && sp.soluongKho > 0)
-              .toList();
-      final outOfStockProducts =
-          widget.products.where((sp) => sp.soluongKho == 0).toList();
+          widget.products.where((sp) => sp.trangthai == 0).toList();
 
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Sản phẩm ẩn'),
-          bottom: TabBar(
-            controller: _tabController,
-            tabs: const [Tab(text: 'Bị ẩn'), Tab(text: 'Hết hàng')],
-          ),
-        ),
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildProductGrid(hiddenProducts),
-            _buildProductGrid(outOfStockProducts),
-          ],
-        ),
+        appBar: AppBar(title: const Text('Sản phẩm ẩn')),
+        body: _buildProductGrid(hiddenProducts),
       );
     }
 
@@ -117,23 +101,32 @@ class _ProductFilterScreenState extends State<ProductFilterScreen>
       itemCount: products.length,
       itemBuilder: (context, index) {
         final sp = products[index];
-        return GestureDetector(
-          onTap: () async {
-            final result = await Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder:
-                    (context) => ProductDetailScreen(
-                      productId: sp.idSp,
-                      userData: widget.userData,
-                    ),
-              ),
-            );
-            if (result == true) {
-              Navigator.pop(context, true);
-            }
-          },
-          child: ProductCard(sanPham: sp),
+        final int tongSoLuong =
+            sp.details?.fold<int>(0, (sum, d) => sum + d.soluongKho) ?? 0;
+        final bool isOutOfStock = tongSoLuong == 0;
+        final role = widget.userData['role'];
+
+        return IgnorePointer(
+          ignoring: (role == 'khach_hang' && isOutOfStock),
+          child: GestureDetector(
+            onTap: () async {
+              if (role == 'khach_hang' && isOutOfStock) return;
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder:
+                      (context) => ProductDetailScreen(
+                        productId: sp.idSp,
+                        userData: widget.userData,
+                      ),
+                ),
+              );
+              if (result == true) {
+                Navigator.pop(context, true);
+              }
+            },
+            child: ProductCard(sanPham: sp),
+          ),
         );
       },
     );

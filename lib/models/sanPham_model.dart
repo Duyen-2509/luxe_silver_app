@@ -4,7 +4,6 @@ class SanPham {
   final String gioitinh;
   final String chatlieu;
   final String? tenpk;
-  final int soluongKho;
   final int idLoai;
   final String tenloai;
   final String? mota;
@@ -22,7 +21,6 @@ class SanPham {
     required this.gioitinh,
     required this.chatlieu,
     this.tenpk,
-    required this.soluongKho,
     required this.idLoai,
     required this.tenloai,
     this.mota,
@@ -57,7 +55,7 @@ class SanPham {
       'gioitinh': gioitinh,
       'chatlieu': chatlieu,
       'tenpk': tenpk,
-      'soluong': soluongKho,
+
       'id_loai': idLoai,
       'tenloai': tenloai,
       'mota': mota,
@@ -77,7 +75,7 @@ class SanPham {
       gioitinh: json['gioitinh'],
       chatlieu: json['chatlieu'],
       tenpk: json['tenpk'],
-      soluongKho: json['soluong_kho'] ?? 0,
+
       idLoai: json['id_loai'],
       tenloai: json['tenloai'] ?? '',
       mota: json['mota'],

@@ -1,104 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:luxe_silver_app/constant/app_color.dart';
+import 'package:luxe_silver_app/controllers/giohang_controller.dart';
 import 'package:luxe_silver_app/views/don_hang.dart';
 import '../models/sanPham_model.dart';
+import '../models/giohang_model.dart';
 import 'package:luxe_silver_app/views/thanh_toan.dart';
 import 'package:luxe_silver_app/views/chi_tiet_sp.dart';
 import 'package:luxe_silver_app/views/tai_khoan.dart';
 import 'package:luxe_silver_app/views/voucher_screen.dart';
 
-// Model cho mục trong giỏ hàng
-class CartItem {
-  final SanPham sanPham;
-  int soLuong;
-  final String? selectedSize;
-
-  CartItem({required this.sanPham, this.soLuong = 1, this.selectedSize});
-
-  Map<String, dynamic> toJson() => {
-    'sanPham': sanPham.toJson(),
-    'soLuong': soLuong,
-    'selectedSize': selectedSize,
-  };
-
-  factory CartItem.fromJson(Map<String, dynamic> json) => CartItem(
-    sanPham: SanPham.fromJson(json['sanPham']),
-    soLuong: json['soLuong'] ?? 1,
-    selectedSize: json['selectedSize'],
-  );
-
-  double get tongGia {
-    if (sanPham.details == null || sanPham.details!.isEmpty) return 0.0;
-    final detail =
-        selectedSize != null
-            ? sanPham.details!.firstWhere(
-              (d) => d.kichthuoc == selectedSize,
-              orElse: () => sanPham.details!.first,
-            )
-            : sanPham.details!.first;
-    return detail.gia * soLuong.toDouble();
-  }
-
-  int get giaDonVi {
-    if (sanPham.details == null || sanPham.details!.isEmpty) return 0;
-    final detail =
-        selectedSize != null
-            ? sanPham.details!.firstWhere(
-              (d) => d.kichthuoc == selectedSize,
-              orElse: () => sanPham.details!.first,
-            )
-            : sanPham.details!.first;
-    return detail.gia;
-  }
-}
-
 // Controller quản lý giỏ hàng (singleton)
-class CartController extends ChangeNotifier {
-  static final CartController _instance = CartController._internal();
-  factory CartController() => _instance;
-  CartController._internal();
-
-  final List<CartItem> _cartItems = [];
-  List<CartItem> get cartItems => _cartItems;
-
-  int get totalItems => _cartItems.fold(0, (sum, item) => sum + item.soLuong);
-
-  double get totalPrice =>
-      _cartItems.fold(0.0, (sum, item) => sum + item.tongGia);
-
-  void addToCart(SanPham sanPham, {String? size, int quantity = 1}) {
-    int existingIndex = _cartItems.indexWhere(
-      (item) => item.sanPham.idSp == sanPham.idSp && item.selectedSize == size,
-    );
-    if (existingIndex >= 0) {
-      _cartItems[existingIndex].soLuong += quantity;
-    } else {
-      _cartItems.add(
-        CartItem(sanPham: sanPham, selectedSize: size, soLuong: quantity),
-      );
-    }
-    notifyListeners();
-  }
-
-  void removeFromCart(int index) {
-    if (index >= 0 && index < _cartItems.length) {
-      _cartItems.removeAt(index);
-      notifyListeners();
-    }
-  }
-
-  void updateQuantity(int index, int newQuantity) {
-    if (index >= 0 && index < _cartItems.length && newQuantity > 0) {
-      _cartItems[index].soLuong = newQuantity;
-      notifyListeners();
-    }
-  }
-
-  void clearCart() {
-    _cartItems.clear();
-    notifyListeners();
-  }
-}
 
 class CartScreen extends StatefulWidget {
   final Map<String, dynamic> userData;

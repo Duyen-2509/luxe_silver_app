@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:luxe_silver_app/constant/image.dart';
 import 'package:luxe_silver_app/controllers/comment_controller.dart';
+import 'package:luxe_silver_app/controllers/giohang_controller.dart';
 import 'package:luxe_silver_app/controllers/product_controller.dart';
+import 'package:luxe_silver_app/models/giohang_model.dart';
 import 'package:luxe_silver_app/repository/comment_repository.dart';
 import 'package:luxe_silver_app/repository/product_repository.dart';
 import 'package:luxe_silver_app/views/gio_hang.dart';
@@ -316,7 +318,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                             const SizedBox(height: 8),
                             Text(
-                              'Kho: ${sanPham.soluongKho}',
+                              'Kho: ${selectedDetail?.soluongKho ?? 0}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[500],
@@ -324,7 +326,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              'Đã bán: ${sanPham.details != null && sanPham.details!.isNotEmpty ? sanPham.details!.first.soluongDaban : 0}',
+                              'Đã bán: ${selectedDetail?.soluongDaban ?? 0}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: Colors.grey[500],
@@ -386,7 +388,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                           onTap: () {
                                             if (quantity <
                                                 (selectedDetail?.soluongKho ??
-                                                    sanPham.soluongKho)) {
+                                                    0)) {
                                               setState(() {
                                                 quantity++;
                                               });
@@ -495,7 +497,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     }
 
                     final bool isHidden = (sanPham.trangthai ?? 1) == 0;
-                    final bool isOutOfStock = sanPham.soluongKho == 0;
+                    final bool isOutOfStock =
+                        (selectedDetail?.soluongKho ?? 0) == 0;
 
                     // Nếu là admin: luôn cho sửa và ẩn, kể cả khi sản phẩm đã bị ẩn hoặc hết hàng
                     // ...trong Builder của bottom buttons...
@@ -694,14 +697,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   void _addToCart(SanPham sanPham) {
     final cartController = CartController();
     cartController.addToCart(sanPham, size: selectedSize, quantity: quantity);
-
-    // Chuyển sang trang giỏ hàng luôn
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CartScreen(userData: widget.userData),
-      ),
-    );
   }
 
   Future<void> _replyToComment(

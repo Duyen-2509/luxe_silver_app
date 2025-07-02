@@ -40,8 +40,8 @@ class HoaDonController {
   }
 
   // Nhân viên hủy đơn (đã giao hoặc đang xử lý)
-  Future<bool> huyDonNV(String mahd, String lyDoNv) async {
-    return await _repository.huyDonNV(mahd, lyDoNv);
+  Future<bool> huyDonNV(String mahd, String lyDoNv, int idNv) async {
+    return await _repository.huyDonNV(mahd, lyDoNv, idNv);
   }
 
   // Duyệt trả hàng (nhân viên)
@@ -49,8 +49,14 @@ class HoaDonController {
     String mahd,
     bool pheDuyet, {
     String? lyDoNv,
+    int? idNv,
   }) async {
-    return await _repository.duyetTraHang(mahd, pheDuyet, lyDoNv: lyDoNv);
+    return await _repository.duyetTraHang(
+      mahd,
+      pheDuyet,
+      lyDoNv: lyDoNv,
+      idNv: idNv,
+    );
   }
 
   // Lấy đơn sắp hết hạn
@@ -70,5 +76,13 @@ class HoaDonController {
 
   Future<bool> ganNhanVien(String mahd, int idNv) async {
     return await _repository.ganNhanVien(mahd, idNv);
+  }
+
+  Future<bool> dangXuLy(String mahd) async {
+    return await _repository.dangXuLy(mahd);
+  }
+
+  Future<bool> thuHoiHang(String mahd, String lyDoNv, int idNv) async {
+    return await _repository.thuHoiHang(mahd, lyDoNv, idNv);
   }
 }

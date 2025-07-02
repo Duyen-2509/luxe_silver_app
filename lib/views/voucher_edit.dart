@@ -288,6 +288,116 @@ class _VoucherEditScreenState extends State<VoucherEditScreen> {
                   ),
                 ),
               ),
+              SizedBox(height: 12),
+              (widget.voucher['trangthai'] == 0)
+                  ? ElevatedButton.icon(
+                    icon: Icon(Icons.visibility, color: Colors.white),
+                    label: Text('Hiện voucher'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder:
+                            (ctx) => AlertDialog(
+                              title: const Text('Xác nhận'),
+                              content: const Text(
+                                'Bạn có chắc muốn hiện voucher này?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Hủy'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: const Text('Hiện'),
+                                ),
+                              ],
+                            ),
+                      );
+                      if (confirm == true) {
+                        final id =
+                            widget.voucher['id'] ??
+                            widget.voucher['id_voucher'];
+                        final ok = await voucherController.showVoucher(
+                          id is int ? id : int.tryParse(id.toString()) ?? 0,
+                        );
+                        if (ok && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Đã hiện voucher')),
+                          );
+                          Navigator.pop(context, true);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Hiện voucher thất bại!'),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  )
+                  : ElevatedButton.icon(
+                    icon: Icon(Icons.visibility_off, color: Colors.white),
+                    label: Text('Ẩn voucher'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    onPressed: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder:
+                            (ctx) => AlertDialog(
+                              title: const Text('Xác nhận'),
+                              content: const Text(
+                                'Bạn có chắc muốn ẩn voucher này?',
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, false),
+                                  child: const Text('Hủy'),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(ctx, true),
+                                  child: const Text('Ẩn'),
+                                ),
+                              ],
+                            ),
+                      );
+                      if (confirm == true) {
+                        final id =
+                            widget.voucher['id'] ??
+                            widget.voucher['id_voucher'];
+                        final ok = await voucherController.hideVoucher(
+                          id is int ? id : int.tryParse(id.toString()) ?? 0,
+                        );
+                        if (ok && context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Đã ẩn voucher')),
+                          );
+                          Navigator.pop(context, true);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Ẩn voucher thất bại!'),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
             ],
           ),
         ),

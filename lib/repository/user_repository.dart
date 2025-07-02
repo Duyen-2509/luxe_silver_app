@@ -167,7 +167,7 @@ class UserRepository {
   }
 
   Future<Map<String, dynamic>?> getStaffById(int idNv) async {
-    final url = Uri.parse('${apiService.baseUrl}get-staff/$idNv');
+    final url = Uri.parse('${apiService.baseUrl}nhan-vien/$idNv');
     final response = await http.get(
       url,
       headers: {
