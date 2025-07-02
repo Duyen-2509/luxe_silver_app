@@ -9,6 +9,7 @@ import 'package:luxe_silver_app/views/khung_san_pham.dart';
 import 'package:luxe_silver_app/views/chi_tiet_sp.dart';
 import 'package:luxe_silver_app/views/loc_san_pham.dart';
 import 'package:luxe_silver_app/views/tai_khoan.dart';
+import 'package:luxe_silver_app/views/thong_bao.dart';
 import 'package:luxe_silver_app/views/voucher_screen.dart';
 import '../models/sanPham_model.dart';
 import '../repository/produt_data_repository.dart';
@@ -22,6 +23,7 @@ import 'package:luxe_silver_app/views/thong_ke.dart';
 import 'package:luxe_silver_app/views/dat_rieng.dart' as datrieng;
 import 'package:luxe_silver_app/repository/tienship_repository.dart';
 import 'package:intl/intl.dart';
+import 'package:luxe_silver_app/controllers/thongbao_controller.dart';
 
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -34,12 +36,13 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController _searchController = TextEditingController();
+  final _thongBaoController = ThongBaoController();
   final FocusNode _searchFocusNode = FocusNode();
   int _selectedIndex = 0;
   late List<SanPham> _allProducts = [];
   final controller = ContactInfoController();
   bool _isRefreshing = false;
-
+  int _soThongBaoChuaDoc = 0;
   double _shippingFee = 0;
 
   // Thay đổi: dùng getter để luôn lấy dữ liệu mới
@@ -49,6 +52,33 @@ class _HomeScreenState extends State<HomeScreen> {
   // tiền ship
   String formatCurrency(num amount) {
     return NumberFormat("#,##0", "vi_VN").format(amount);
+  }
+
+  Future<void> _fetchSoThongBaoChuaDoc() async {
+    try {
+      Map<String, List<dynamic>> data;
+      if (widget.userData['role'] == 'nhan_vien' ||
+          widget.userData['role'] == 'admin') {
+        data = await _thongBaoController.getThongBaoNhanVien(
+          widget.userData['id_nv'],
+        );
+      } else {
+        data = await _thongBaoController.getThongBaoKhach(
+          widget.userData['id'],
+        );
+      }
+      int count = 0;
+      for (var tb in [...?data['don_hang'], ...?data['binh_luan']]) {
+        if ((tb['da_doc'] ?? 0) == 0) count++;
+      }
+      setState(() {
+        _soThongBaoChuaDoc = count;
+      });
+    } catch (e) {
+      setState(() {
+        _soThongBaoChuaDoc = 0;
+      });
+    }
   }
 
   Future<void> _showEditShippingFeeDialog() async {
@@ -276,6 +306,7 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fetchShippingFee();
+    _fetchSoThongBaoChuaDoc();
   }
 
   @override
@@ -332,14 +363,72 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           actions: [
-            IconButton(
-              icon: const Icon(
-                Icons.notifications_outlined,
-                color: Colors.black,
-              ),
-              onPressed: () {
-                _dismissKeyboard();
-              },
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                IconButton(
+                  icon: const Icon(
+                    Icons.notifications_outlined,
+                    color: Colors.black,
+                  ),
+                  onPressed: () async {
+                    _dismissKeyboard();
+                    if (widget.userData['role'] == 'nhan_vien' ||
+                        widget.userData['role'] == 'admin') {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => ThongBaoScreen(
+                                idNhanVien: widget.userData['id_nv'],
+                                isNhanVien: true,
+                                userData: widget.userData,
+                              ),
+                        ),
+                      );
+                    } else {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => ThongBaoScreen(
+                                idKhach: widget.userData['id'],
+                                isNhanVien: false,
+                                userData: widget.userData,
+                              ),
+                        ),
+                      );
+                    }
+                    _fetchSoThongBaoChuaDoc();
+                  },
+                ),
+                if (_soThongBaoChuaDoc > 0)
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        _soThongBaoChuaDoc > 99 ? '99+' : '$_soThongBaoChuaDoc',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          height: 1,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ],
         ),

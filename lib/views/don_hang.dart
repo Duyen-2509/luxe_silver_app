@@ -4,6 +4,7 @@ import 'package:luxe_silver_app/controllers/hoadon_controller.dart';
 import 'package:luxe_silver_app/views/gio_hang.dart';
 import 'package:luxe_silver_app/views/tai_khoan.dart';
 import 'chi_tiet_don_hang.dart';
+import 'package:intl/intl.dart';
 
 class DonHangScreen extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -24,6 +25,9 @@ class _DonHangScreenState extends State<DonHangScreen> {
     'Đã huỷ',
     'Trả hàng',
   ];
+  String formatCurrency(num amount) {
+    return NumberFormat("#,##0", "vi_VN").format(amount);
+  }
 
   Future<List<Map<String, dynamic>>>? futureHoaDon;
   int _selectedIndex = 2;
@@ -154,55 +158,69 @@ class _DonHangScreenState extends State<DonHangScreen> {
                   return const Center(child: Text('Không có đơn hàng nào'));
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(10),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final hd = filtered[index];
-                    return Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: ListTile(
-                        leading: Image.asset(
-                          'assets/logo.png',
-                          width: 48,
-                          height: 48,
-                          fit: BoxFit.cover,
-                        ),
-                        title: Text(
-                          'Đơn hàng: ${hd['mahd'] ?? ''}',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Tổng tiền: ${hd['tonggia']} vnd'),
-                            Text('Trạng thái: ${hd['ten_trangthai'] ?? ''}'),
-                          ],
-                        ),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 18),
-                        onTap: () async {
-                          // Chờ khi trang chi tiết đóng lại
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (_) => ChiTietDonHangScreen(
-                                    mahd: hd['mahd'],
-                                    userData: widget.userData,
-                                  ),
-                            ),
-                          );
-                          // Làm mới lại danh sách hóa đơn
-                          setState(() {
-                            futureHoaDon = HoaDonController().fetchHoaDonList();
-                          });
-                        },
-                      ),
-                    );
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    setState(() {
+                      futureHoaDon = HoaDonController().fetchHoaDonList();
+                    });
+                    await futureHoaDon;
                   },
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(10),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      final hd = filtered[index];
+                      return Card(
+                        elevation: 2,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ListTile(
+                          leading: Image.asset(
+                            'assets/logo.png',
+                            width: 48,
+                            height: 48,
+                            fit: BoxFit.cover,
+                          ),
+                          title: Text(
+                            'Đơn hàng: ${hd['mahd'] ?? ''}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Tổng tiền: ${formatCurrency(hd['tonggia'])} vnđ',
+                              ),
+                              Text('Trạng thái: ${hd['ten_trangthai'] ?? ''}'),
+                            ],
+                          ),
+                          trailing: const Icon(
+                            Icons.arrow_forward_ios,
+                            size: 18,
+                          ),
+                          onTap: () async {
+                            // Chờ khi trang chi tiết đóng lại
+                            await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (_) => ChiTietDonHangScreen(
+                                      mahd: hd['mahd'],
+                                      userData: widget.userData,
+                                    ),
+                              ),
+                            );
+                            // Làm mới lại danh sách hóa đơn
+                            setState(() {
+                              futureHoaDon =
+                                  HoaDonController().fetchHoaDonList();
+                            });
+                          },
+                        ),
+                      );
+                    },
+                  ),
                 );
               },
             ),

@@ -215,9 +215,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                         currentName:
                                             shippingName ??
                                             widget.userData['ten'],
-                                        currentAddress:
-                                            shippingAddress ??
-                                            widget.userData['diachi'],
+                                        currentAddress: ' ',
                                         currentPhone:
                                             shippingPhone ??
                                             widget.userData['sdt'] ??
