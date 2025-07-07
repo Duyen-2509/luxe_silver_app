@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/controllers/hoadon_controller.dart';
 import 'package:luxe_silver_app/views/chi_tiec_dh_nv.dart';
 import 'package:intl/intl.dart';
@@ -71,6 +72,7 @@ class _QLDonHangScreenState extends State<QLDonHangScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Quản lý đơn hàng'),
+        backgroundColor: AppColors.appBarBackground,
         leading: const BackButton(),
       ),
       body: Column(
@@ -343,6 +345,7 @@ class _QLDonHangScreenState extends State<QLDonHangScreen> {
                           });
                         },
                         child: Card(
+                          color: AppColors.background,
                           elevation: 2,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -434,6 +437,8 @@ class _QLDonHangScreenState extends State<QLDonHangScreen> {
                                             builder: (context) {
                                               String input = '';
                                               return AlertDialog(
+                                                backgroundColor:
+                                                    AppColors.alertDialog,
                                                 title: const Text(
                                                   'Lý do hủy đơn',
                                                 ),

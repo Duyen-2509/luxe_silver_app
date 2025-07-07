@@ -14,13 +14,19 @@ class AuthRepository {
   ) async {
     final url = Uri.parse(apiService.baseUrl + 'login');
     try {
+      // Tạo token tạm (bạn có thể thay bằng token thực tế nếu có)
+      final token = 'test_token_${DateTime.now().millisecondsSinceEpoch}';
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'sodienthoai': phone, 'password': password}),
+        body: json.encode({
+          'sodienthoai': phone,
+          'password': password,
+          'token': token, // Gửi token lên API
+        }),
       );
       print(response.body);
-      print('Số điện thoại gửi lên: $phone'); // In ra số điện thoại
+      print('Số điện thoại gửi lên: $phone');
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -77,13 +83,19 @@ class AuthRepository {
     required String email,
     required String name,
     String? phone,
+    required String token,
   }) async {
     final url = Uri.parse(apiService.baseUrl + 'login-google');
     try {
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'email': email, 'ten': name, 'sodienthoai': phone}),
+        body: json.encode({
+          'email': email,
+          'ten': name,
+          'sodienthoai': phone,
+          'token': token, // gửi token lên API
+        }),
       );
       if (response.statusCode == 200 || response.statusCode == 201) {
         return json.decode(response.body);

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/views/chi_tiec_dh_nv.dart';
 import '../controllers/thongbao_controller.dart';
 import 'chi_tiet_don_hang.dart';
 import 'chi_tiet_sp.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../main.dart';
 
 class ThongBaoScreen extends StatefulWidget {
   final int? idKhach;
@@ -23,13 +26,12 @@ class ThongBaoScreen extends StatefulWidget {
 
 class _ThongBaoScreenState extends State<ThongBaoScreen> {
   late Future<Map<String, List<dynamic>>> _futureThongBao;
+  // Lưu id_tb đã hiện notification để tránh lặp lại
+  final Set<int> _notifiedIds = {};
 
   @override
   void initState() {
     super.initState();
-    print(
-      'ThongBaoScreen: idNhanVien=${widget.idNhanVien}, isNhanVien=${widget.isNhanVien}',
-    );
     _reloadThongBao();
   }
 
@@ -49,16 +51,56 @@ class _ThongBaoScreenState extends State<ThongBaoScreen> {
     });
   }
 
+  Future<void> showLocalNotification(String title, String body) async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+          'default_channel_id',
+          'Thông báo',
+          channelDescription: 'Kênh thông báo chung',
+          importance: Importance.max,
+          priority: Priority.high,
+          showWhen: true,
+        );
+    const NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+    );
+    await flutterLocalNotificationsPlugin.show(
+      DateTime.now().millisecondsSinceEpoch ~/ 1000, // unique id
+      title,
+      body,
+      platformChannelSpecifics,
+    );
+  }
+
+  // Hàm hiện notification cho các thông báo chưa đọc, không lặp lại
+  void _notifyUnread(List<dynamic> donHangList, List<dynamic> binhLuanList) {
+    for (var tb in [...donHangList, ...binhLuanList]) {
+      final int? idTb = tb['id_tb'];
+      if ((tb['da_doc'] ?? 0) == 0 &&
+          idTb != null &&
+          !_notifiedIds.contains(idTb)) {
+        showLocalNotification(
+          tb['tieu_de'] ?? 'Thông báo',
+          tb['noi_dung'] ?? '',
+        );
+        _notifiedIds.add(idTb);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
       child: Scaffold(
-        appBar: AppBar(title: const Text('Thông báo'), centerTitle: true),
+        appBar: AppBar(
+          title: const Text('Thông báo'),
+          centerTitle: true,
+          backgroundColor: AppColors.appBarBackground,
+        ),
         body: FutureBuilder<Map<String, List<dynamic>>>(
           future: _futureThongBao,
           builder: (context, snapshot) {
-            print('ThongBaoScreen snapshot.data: ${snapshot.data}');
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator());
             }
@@ -67,8 +109,12 @@ class _ThongBaoScreenState extends State<ThongBaoScreen> {
             }
             final donHangList = snapshot.data?['don_hang'] ?? [];
             final binhLuanList = snapshot.data?['binh_luan'] ?? [];
-            print('donHangList: $donHangList');
-            print('binhLuanList: $binhLuanList');
+
+            // Hiện notification cho các thông báo chưa đọc (không lặp lại)
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _notifyUnread(donHangList, binhLuanList);
+            });
+
             return Column(
               children: [
                 Container(
@@ -152,7 +198,7 @@ class _ThongBaoScreenState extends State<ThongBaoScreen> {
               await ThongBaoController().danhDauDaDoc(tb['id_tb']);
               _reloadThongBao();
             }
-            // Nếu là đơn hàng - SỬA: dùng mahd
+            // Nếu là đơn hàng
             if (icon == Icons.notifications && tb['mahd'] != null) {
               if (widget.isNhanVien) {
                 Navigator.push(
@@ -187,8 +233,8 @@ class _ThongBaoScreenState extends State<ThongBaoScreen> {
                   idSp = int.tryParse(match.group(1)!);
                 }
               }
+
               if (idSp != null) {
-                print('Đi tới chi tiết sản phẩm id: $idSp');
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -199,8 +245,6 @@ class _ThongBaoScreenState extends State<ThongBaoScreen> {
                         ),
                   ),
                 );
-              } else {
-                print('Không tìm thấy id_sp để chuyển trang');
               }
             }
           },

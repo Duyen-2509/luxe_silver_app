@@ -18,12 +18,13 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:luxe_silver_app/views/ql_don_hang.dart';
 import 'package:luxe_silver_app/views/ql_nhan_vien.dart';
 import 'package:luxe_silver_app/views/don_hang.dart';
-import 'package:luxe_silver_app/views/gio_hang.dart';
 import 'package:luxe_silver_app/views/thong_ke.dart';
 import 'package:luxe_silver_app/views/dat_rieng.dart' as datrieng;
 import 'package:luxe_silver_app/repository/tienship_repository.dart';
 import 'package:intl/intl.dart';
 import 'package:luxe_silver_app/controllers/thongbao_controller.dart';
+import 'package:luxe_silver_app/views/tim_kiem.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 class HomeScreen extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -40,10 +41,13 @@ class _HomeScreenState extends State<HomeScreen> {
   final FocusNode _searchFocusNode = FocusNode();
   int _selectedIndex = 0;
   late List<SanPham> _allProducts = [];
+  List<SanPham> _filteredProducts = [];
   final controller = ContactInfoController();
   bool _isRefreshing = false;
   int _soThongBaoChuaDoc = 0;
   double _shippingFee = 0;
+  late stt.SpeechToText _speech;
+  bool _isListening = false;
 
   // Thay đổi: dùng getter để luôn lấy dữ liệu mới
   Future<List<SanPham>> get _futureProducts =>
@@ -89,6 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
+            backgroundColor: AppColors.alertDialog,
             title: const Text('Chỉnh sửa phí vận chuyển'),
             content: TextField(
               controller: controller,
@@ -149,6 +154,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _onMicPressed() async {
+    final text = await listenForSearchText(context);
+    if (text != null && text.isNotEmpty) {
+      setState(() {
+        _searchController.text = text;
+        _onSearchChanged(text);
+      });
+    }
+  }
+
   // Method để ẩn bàn phím và bỏ focus
   void _dismissKeyboard() {
     _searchFocusNode.unfocus();
@@ -157,8 +172,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Method xử lý tìm kiếm
   void _onSearchChanged(String value) {
-    // Có thể thêm logic tìm kiếm ở đây
-    print('Searching for: $value');
+    setState(() {
+      _filteredProducts = ProductSearchHelper.searchProductsByName(
+        _allProducts.where((sp) => (sp.trangthai ?? 1) == 1).toList(),
+        keyword: value,
+      );
+    });
   }
 
   // Method xử lý khi submit search
@@ -305,6 +324,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _speech = stt.SpeechToText();
     _fetchShippingFee();
     _fetchSoThongBaoChuaDoc();
   }
@@ -319,7 +339,7 @@ class _HomeScreenState extends State<HomeScreen> {
         key: _scaffoldKey,
         backgroundColor: Colors.grey[50],
         appBar: AppBar(
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.appBarBackground,
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.menu, color: Colors.black),
@@ -344,16 +364,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 hintText: 'Tìm kiếm...',
                 hintStyle: const TextStyle(color: Colors.grey),
                 prefixIcon: const Icon(Icons.search, color: Colors.grey),
-                suffixIcon:
-                    _searchController.text.isNotEmpty
-                        ? IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.grey),
-                          onPressed: () {
-                            _searchController.clear();
-                            _dismissKeyboard();
-                          },
-                        )
-                        : null,
+
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.mic, color: Colors.grey),
+                  onPressed: _onMicPressed,
+                ),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 15,
@@ -433,8 +448,9 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         drawer: Drawer(
+          backgroundColor: Colors.white,
           child: GestureDetector(
-            onTap: _dismissKeyboard, // Ẩn bàn phím khi tap vào drawer
+            onTap: _dismissKeyboard,
             child: ListView(
               padding: EdgeInsets.zero,
               children: [
@@ -667,7 +683,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 // Lọc sản phẩm
                 final visibleProducts =
                     products.where((sp) => (sp.trangthai ?? 1) == 1).toList();
-
+                final productsToShow =
+                    _searchController.text.isNotEmpty
+                        ? _filteredProducts
+                        : visibleProducts;
                 if (visibleProducts.isEmpty) {
                   return Center(
                     child: Column(
@@ -750,9 +769,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisSpacing: crossAxisSpacing,
                         mainAxisSpacing: mainAxisSpacing,
                       ),
-                      itemCount: visibleProducts.length,
+                      itemCount: productsToShow.length,
                       itemBuilder: (context, index) {
-                        final sanPham = visibleProducts[index];
+                        final sanPham = productsToShow[index];
                         final int tongSoLuong =
                             sanPham.details?.fold<int>(
                               0,

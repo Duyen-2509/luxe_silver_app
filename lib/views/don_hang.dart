@@ -68,6 +68,7 @@ class _DonHangScreenState extends State<DonHangScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Quản lý đơn hàng'),
+        backgroundColor: AppColors.appBarBackground,
         leading: const BackButton(),
       ),
       body: Column(
@@ -171,6 +172,7 @@ class _DonHangScreenState extends State<DonHangScreen> {
                     itemBuilder: (context, index) {
                       final hd = filtered[index];
                       return Card(
+                        color: AppColors.background,
                         elevation: 2,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

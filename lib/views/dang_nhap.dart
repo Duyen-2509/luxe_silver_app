@@ -6,6 +6,7 @@ import '../constant/app_color.dart';
 import '../constant/app_styles.dart';
 import '../constant/image.dart';
 import '../services/auth_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,6 +21,17 @@ class _LoginScreenState extends State<LoginScreen> {
   final loginController = LoginController();
 
   bool _obscurePassword = true; // Biến điều khiển ẩn/hiện mật khẩu
+  Future<void> saveLoginInfo(String token, int id, String role) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+    await prefs.setInt('id', id);
+    await prefs.setString('role', role);
+  }
+
+  Future<void> saveToken(String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('token', token);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +101,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     phone,
                     password,
                   );
-
+                  print('userData-------------->: $userData');
                   if (userData != null) {
                     // Nếu là nhân viên hoặc admin, gán id_nv cho userData
                     if (userData['role'] == 'admin' ||
@@ -97,14 +109,35 @@ class _LoginScreenState extends State<LoginScreen> {
                       userData['id_nv'] = userData['id_nv'] ?? userData['id'];
                     }
 
-                    // Lưu token vào bộ nhớ
-                    // await AuthStorage.saveToken(userData['token']);
+                    // Kiểm tra token
+                    final token = userData['token'];
+                    if (token != null && token is String && token.isNotEmpty) {
+                      if (!userData.containsKey('role') ||
+                          userData['role'] == null) {
+                        userData['role'] =
+                            'khach_hang'; // hoặc xác định role theo logic của bạn
+                      }
+                      await saveLoginInfo(
+                        token,
+                        userData['id_nv'] ?? userData['id'],
+                        userData['role'],
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Đăng nhập thất bại: Không nhận được token!',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
 
-                    Navigator.pushReplacement(
-                      context,
+                    Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(
                         builder: (context) => HomeScreen(userData: userData),
                       ),
+                      (route) => false,
                     );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -125,6 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
               const Text('Hoặc'),
+              //gg
               IconButton(
                 icon: const Icon(
                   Icons.g_mobiledata,
@@ -133,20 +167,28 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 onPressed: () async {
                   final userData = await loginController.loginWithGoogle();
-                  if (userData != null) {
-                    // Lưu token Google vào bộ nhớ
-                    //await AuthStorage.saveToken(userData['token']);
-
-                    Navigator.pushReplacement(
-                      context,
+                  final token = userData?['token'];
+                  if (userData != null &&
+                      token != null &&
+                      token is String &&
+                      token.isNotEmpty) {
+                    await saveLoginInfo(
+                      token,
+                      userData['id_nv'] ?? userData['id'],
+                      userData['role'],
+                    );
+                    Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(
                         builder: (context) => HomeScreen(userData: userData),
                       ),
+                      (route) => false,
                     );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Đăng nhập Google thất bại!'),
+                        content: Text(
+                          'Đăng nhập Google thất bại! Không nhận được token.',
+                        ),
                       ),
                     );
                   }

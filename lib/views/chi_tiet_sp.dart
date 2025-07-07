@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/constant/image.dart';
 import 'package:luxe_silver_app/controllers/comment_controller.dart';
 import 'package:luxe_silver_app/controllers/giohang_controller.dart';
@@ -233,6 +234,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                             (context) => Scaffold(
                                               appBar: AppBar(
                                                 title: const Text('Bình luận'),
+                                                backgroundColor:
+                                                    AppColors.appBarBackground,
                                               ),
                                               body: CommentSection(
                                                 productId: sanPham.idSp,
@@ -397,6 +400,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                                 context: context,
                                                 builder:
                                                     (context) => AlertDialog(
+                                                      backgroundColor:
+                                                          AppColors.alertDialog,
                                                       title: const Text(
                                                         'Thông báo',
                                                         style: TextStyle(
@@ -547,6 +552,44 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           Expanded(
                             child: ElevatedButton(
                               onPressed: () async {
+                                // Thêm dialog xác nhận
+                                final confirm = await showDialog<bool>(
+                                  context: context,
+                                  builder:
+                                      (context) => AlertDialog(
+                                        backgroundColor: AppColors.alertDialog,
+                                        title: Text(
+                                          !isHidden
+                                              ? 'Xác nhận ẩn sản phẩm'
+                                              : 'Xác nhận hiện sản phẩm',
+                                        ),
+                                        content: Text(
+                                          !isHidden
+                                              ? 'Bạn có chắc chắn muốn ẩn sản phẩm này không?'
+                                              : 'Bạn có chắc chắn muốn hiện lại sản phẩm này không?',
+                                        ),
+                                        actions: [
+                                          TextButton(
+                                            onPressed:
+                                                () => Navigator.pop(
+                                                  context,
+                                                  false,
+                                                ),
+                                            child: const Text('Hủy'),
+                                          ),
+                                          TextButton(
+                                            onPressed:
+                                                () => Navigator.pop(
+                                                  context,
+                                                  true,
+                                                ),
+                                            child: const Text('Xác nhận'),
+                                          ),
+                                        ],
+                                      ),
+                                );
+                                if (confirm != true) return;
+
                                 String? result;
                                 if (!isHidden) {
                                   // Đang hiện, cho phép ẩn
@@ -560,7 +603,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                         content: Text('Đã ẩn sản phẩm'),
                                       ),
                                     );
-                                    // Load lại chi tiết sản phẩm để cập nhật trạng thái
+                                    if (!mounted) return;
                                     setState(() {
                                       _futureProduct = ProductDataRepository(
                                         ApiService(),
@@ -580,6 +623,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                       ),
                                     );
                                     Navigator.pop(context, true);
+                                    if (!mounted) return;
                                     setState(() {
                                       _futureProduct = ProductDataRepository(
                                         ApiService(),
@@ -588,6 +632,48 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   }
                                 }
                               },
+                              // onPressed: () async {
+                              //   String? result;
+                              //   if (!isHidden) {
+                              //     // Đang hiện, cho phép ẩn
+                              //     result = await controller.hideProduct(
+                              //       sanPham.idSp,
+                              //     );
+                              //     if (result != null &&
+                              //         result.contains('thành công')) {
+                              //       ScaffoldMessenger.of(context).showSnackBar(
+                              //         const SnackBar(
+                              //           content: Text('Đã ẩn sản phẩm'),
+                              //         ),
+                              //       );
+                              //       // Load lại chi tiết sản phẩm để cập nhật trạng thái
+                              //       setState(() {
+                              //         _futureProduct = ProductDataRepository(
+                              //           ApiService(),
+                              //         ).fetchProductDetail(widget.productId);
+                              //       });
+                              //     }
+                              //   } else {
+                              //     // Đang ẩn, cho phép hiện lại
+                              //     result = await controller.showProduct(
+                              //       sanPham.idSp,
+                              //     );
+                              //     if (result != null &&
+                              //         result.contains('thành công')) {
+                              //       ScaffoldMessenger.of(context).showSnackBar(
+                              //         const SnackBar(
+                              //           content: Text('Đã hiện sản phẩm'),
+                              //         ),
+                              //       );
+                              //       Navigator.pop(context, true);
+                              //       setState(() {
+                              //         _futureProduct = ProductDataRepository(
+                              //           ApiService(),
+                              //         ).fetchProductDetail(widget.productId);
+                              //       });
+                              //     }
+                              //   }
+                              // },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
                                     !isHidden ? Colors.black : Colors.green,
@@ -708,6 +794,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       builder: (context) {
         final controller = TextEditingController();
         return AlertDialog(
+          backgroundColor: AppColors.alertDialog,
           title: const Text('Trả lời bình luận'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -783,6 +870,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       builder: (context) {
         final controller = TextEditingController(text: comment['traloi_kh']);
         return AlertDialog(
+          backgroundColor: AppColors.alertDialog,
           title: const Text('Sửa trả lời'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -857,6 +945,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
+            backgroundColor: AppColors.alertDialog,
             title: const Text('Xóa trả lời'),
             content: const Text('Bạn chắc chắn muốn xóa trả lời này không?'),
             actions: [

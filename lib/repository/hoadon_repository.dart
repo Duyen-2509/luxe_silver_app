@@ -57,6 +57,15 @@ class HoaDonRepository {
     return response.statusCode == 200;
   }
 
+  // Xác nhận đã giao tới khách (nhân viên)
+  Future<bool> daGiaoToi(String mahd) async {
+    final response = await http.post(
+      Uri.parse('${baseUrl}hoadon/$mahd/da-giao-toi'),
+      headers: {'Content-Type': 'application/json'},
+    );
+    return response.statusCode == 200;
+  }
+
   // Xác nhận đã nhận hàng (khách)
   Future<bool> daNhanHang(String mahd) async {
     final response = await http.post(

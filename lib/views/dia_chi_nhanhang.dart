@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import '../services/vietnam_location_api.dart';
 
 class DiaChiNhanHangScreen extends StatefulWidget {
@@ -89,7 +90,10 @@ class _DiaChiNhanHangScreenState extends State<DiaChiNhanHangScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Địa chỉ nhận hàng')),
+      appBar: AppBar(
+        title: const Text('Địa chỉ nhận hàng'),
+        backgroundColor: AppColors.appBarBackground,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: SingleChildScrollView(
@@ -200,6 +204,14 @@ class _DiaChiNhanHangScreenState extends State<DiaChiNhanHangScreen> {
                       'address': getFullAddress(),
                     });
                   },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.black,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
                   child: const Text('Lưu'),
                 ),
               ),

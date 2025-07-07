@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/views/chi_tiet_sp.dart';
 import '../controllers/comment_controller.dart';
 import '../repository/comment_repository.dart';
@@ -30,7 +31,10 @@ class _DanhGiaScreenState extends State<DanhGiaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Đánh giá sản phẩm')),
+      appBar: AppBar(
+        title: const Text('Đánh giá sản phẩm'),
+        backgroundColor: AppColors.appBarBackground,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

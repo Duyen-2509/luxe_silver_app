@@ -76,9 +76,9 @@ class _CartScreenState extends State<CartScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[50],
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.appBarBackground,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black),
@@ -406,6 +406,7 @@ class _CartScreenState extends State<CartScreen> {
                               context: context,
                               builder:
                                   (context) => AlertDialog(
+                                    backgroundColor: AppColors.alertDialog,
                                     title: const Text(
                                       'Thông báo',
                                       style: TextStyle(
@@ -542,6 +543,7 @@ class _CartScreenState extends State<CartScreen> {
                                 context: context,
                                 builder:
                                     (context) => AlertDialog(
+                                      backgroundColor: AppColors.alertDialog,
                                       title: const Text(
                                         'Thông báo',
                                         style: TextStyle(

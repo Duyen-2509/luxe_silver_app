@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/controllers/voucher_controller.dart';
 
 class VoucherEditScreen extends StatefulWidget {
@@ -77,6 +78,7 @@ class _VoucherEditScreenState extends State<VoucherEditScreen> {
     }
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: AppColors.appBarBackground,
         title: const Text('Chỉnh sửa Voucher'),
         leading: BackButton(),
         elevation: 1,
@@ -306,6 +308,7 @@ class _VoucherEditScreenState extends State<VoucherEditScreen> {
                         context: context,
                         builder:
                             (ctx) => AlertDialog(
+                              backgroundColor: AppColors.alertDialog,
                               title: const Text('Xác nhận'),
                               content: const Text(
                                 'Bạn có chắc muốn hiện voucher này?',
@@ -360,6 +363,7 @@ class _VoucherEditScreenState extends State<VoucherEditScreen> {
                         context: context,
                         builder:
                             (ctx) => AlertDialog(
+                              backgroundColor: AppColors.alertDialog,
                               title: const Text('Xác nhận'),
                               content: const Text(
                                 'Bạn có chắc muốn ẩn voucher này?',

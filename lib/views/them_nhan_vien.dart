@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/controllers/user_controller.dart';
 import 'package:luxe_silver_app/repository/user_repository.dart';
 import 'package:luxe_silver_app/services/api_service.dart';
@@ -91,7 +92,10 @@ class _ThemNhanVienScreenState extends State<ThemNhanVienScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Thêm nhân viên')),
+      appBar: AppBar(
+        title: const Text('Thêm nhân viên'),
+        backgroundColor: AppColors.appBarBackground,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(

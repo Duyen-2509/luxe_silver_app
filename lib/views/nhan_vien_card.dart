@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 
 class NhanVienCard extends StatelessWidget {
   final String ten;
@@ -21,6 +22,7 @@ class NhanVienCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      color: AppColors.appBarBackground,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -53,18 +55,6 @@ class NhanVienCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 4),
-            // Text.rich(
-            //   TextSpan(
-            //     children: [
-            //       const TextSpan(
-            //         text: 'Email: ',
-            //         style: TextStyle(fontWeight: FontWeight.bold),
-            //       ),
-            //       TextSpan(text: email),
-            //     ],
-            //   ),
-            // ),
-            // const SizedBox(height: 4),
             Text.rich(
               TextSpan(
                 children: [

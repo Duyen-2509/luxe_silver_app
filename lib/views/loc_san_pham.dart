@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import '../models/sanPham_model.dart';
 import 'khung_san_pham.dart';
 import 'chi_tiet_sp.dart';
@@ -46,7 +47,10 @@ class _ProductFilterScreenState extends State<ProductFilterScreen>
           widget.products.where((sp) => sp.trangthai == 0).toList();
 
       return Scaffold(
-        appBar: AppBar(title: const Text('Sản phẩm ẩn')),
+        appBar: AppBar(
+          title: const Text('Sản phẩm ẩn'),
+          backgroundColor: AppColors.appBarBackground,
+        ),
         body: _buildProductGrid(hiddenProducts),
       );
     }
@@ -71,6 +75,7 @@ class _ProductFilterScreenState extends State<ProductFilterScreen>
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: AppColors.appBarBackground,
         title: Text(
           '${widget.nhom} ${widget.gioiTinh == "Nữ"
               ? "- Nữ"

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/controllers/comment_controller.dart';
 import 'package:luxe_silver_app/controllers/hoadon_controller.dart';
 import 'package:luxe_silver_app/repository/comment_repository.dart';
@@ -147,6 +148,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
           builder: (context) {
             String input = '';
             return AlertDialog(
+              backgroundColor: AppColors.alertDialog,
               title: const Text('Lý do hủy đơn'),
               content: TextField(
                 autofocus: true,
@@ -178,9 +180,14 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
 
         if (success && mounted) {
           _showSuccessSnackBar('Đã hủy đơn hàng thành công');
+
+          // Cập nhật state và reload data
           setState(() {
             hoaDonInfo?['id_ttdh'] = 5;
             hoaDonInfo?['ten_trangthai'] = 'Đã hủy';
+            hoaDonInfo?['ly_do_kh'] = lyDo;
+
+            futureChiTiet = hoaDonController.fetchChiTietHoaDon(widget.mahd);
           });
         }
       } catch (e) {
@@ -204,6 +211,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
           builder: (context) {
             String input = '';
             return AlertDialog(
+              backgroundColor: AppColors.alertDialog,
               title: const Text('Lý do trả hàng'),
               content: TextField(
                 autofocus: true,
@@ -238,6 +246,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
           setState(() {
             hoaDonInfo?['id_ttdh'] = 6;
             hoaDonInfo?['ten_trangthai'] = 'Trả hàng';
+            hoaDonInfo?['ly_do_kh'] = lyDo;
           });
         }
       } catch (e) {
@@ -300,6 +309,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
       context: context,
       builder:
           (context) => AlertDialog(
+            backgroundColor: AppColors.alertDialog,
             title: Text(title),
             content: Text(content),
             actions: [

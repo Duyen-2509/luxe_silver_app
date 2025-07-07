@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/constant/dieukien%20.dart';
 import 'package:luxe_silver_app/controllers/product_controller.dart';
 import 'package:luxe_silver_app/repository/product_repository.dart';
@@ -87,6 +88,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: AppColors.alertDialog,
           title: const Text('Chọn nguồn ảnh'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -732,6 +734,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     _saveProduct();
                   }
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8), // tuỳ chỉnh bo góc
+                  ),
+                ),
                 child: const Text('Lưu sản phẩm'),
               ),
             ],

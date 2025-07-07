@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/controllers/user_controller.dart';
 import 'package:luxe_silver_app/repository/user_repository.dart';
 import 'package:luxe_silver_app/services/api_service.dart';
@@ -157,7 +158,10 @@ class _SuaNhanVienScreenState extends State<SuaNhanVienScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chỉnh sửa nhân viên')),
+      appBar: AppBar(
+        title: const Text('Chỉnh sửa nhân viên'),
+        backgroundColor: AppColors.appBarBackground,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Form(
@@ -190,20 +194,6 @@ class _SuaNhanVienScreenState extends State<SuaNhanVienScreen> {
                 },
               ),
               const SizedBox(height: 12),
-              // TextFormField(
-              //   controller: _emailController,
-              //   decoration: const InputDecoration(labelText: 'Email'),
-              //   keyboardType: TextInputType.emailAddress,
-              //   validator: (value) {
-              //     if (value == null || value.trim().isEmpty) {
-              //       return 'Vui lòng nhập email';
-              //     }
-              //     if (!validator.emailValidator(value.trim())) {
-              //       return 'Email không hợp lệ';
-              //     }
-              //     return null;
-              //   },
-              // ),
               const SizedBox(height: 12),
               // Địa chỉ
               const Text('Địa chỉ'),

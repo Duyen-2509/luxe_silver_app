@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/views/sua_nhan_vien.dart';
 import 'package:luxe_silver_app/views/them_nhan_vien.dart';
 import 'package:luxe_silver_app/controllers/user_controller.dart';
@@ -59,6 +60,7 @@ class _QLNhanVienScreenState extends State<QLNhanVienScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: AppColors.appBarBackground,
         title: const Text('Danh sách nhân viên'),
         leading: BackButton(),
       ),
@@ -137,6 +139,7 @@ class _QLNhanVienScreenState extends State<QLNhanVienScreen> {
                                   context: context,
                                   builder:
                                       (context) => AlertDialog(
+                                        backgroundColor: AppColors.alertDialog,
                                         title: Text(
                                           value
                                               ? 'Mở khóa nhân viên'
@@ -190,6 +193,7 @@ class _QLNhanVienScreenState extends State<QLNhanVienScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.background,
         onPressed: () async {
           // Chờ thêm nhân viên xong mới reload
           final result = await Navigator.push(

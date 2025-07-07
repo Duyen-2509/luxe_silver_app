@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/controllers/giohang_controller.dart';
 import 'package:luxe_silver_app/controllers/voucher_controller.dart';
 import 'package:luxe_silver_app/models/giohang_model.dart';
@@ -57,6 +58,40 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.initState();
     _loadShippingInfo();
     _fetchShippingFee();
+  }
+
+  // thanh toán ví
+  Future<void> _saveOrder(Map<String, dynamic> hoadonData) async {
+    try {
+      final hoaDonController = HoaDonController();
+      final result = await hoaDonController.addHoaDon(hoadonData);
+
+      if (result != null && result['mahd'] != null) {
+        // Nếu có voucher, gọi API giảm số lượng voucher
+        if (selectedVoucher != null) {
+          final voucherController = VoucherController();
+          await voucherController.useVoucher(selectedVoucher!['id_voucher']);
+        }
+        // XÓA GIỎ HÀNG SAU KHI THANH TOÁN
+        cartController.clearCart();
+        // 4. Chuyển sang trang Đơn hàng
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DonHangScreen(userData: widget.userData),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Tạo hóa đơn thất bại!')));
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Lỗi tạo hóa đơn: $e')));
+    }
   }
 
   Future<void> _fetchShippingFee() async {
@@ -304,6 +339,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           context: context,
                           builder:
                               (context) => AlertDialog(
+                                backgroundColor: AppColors.alertDialog,
                                 title: Text(
                                   'Chọn phương thức thanh toán',
                                   textAlign: TextAlign.center,
@@ -577,7 +613,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         paymentMethod == 'cod'
                             ? 'Thanh toán khi nhận hàng'
                             : 'Thanh toán qua Stripe';
-                    // Chuẩn bị danh sách chi tiết hóa đơn
                     final List chitiet =
                         (widget.product != null)
                             ? [
@@ -610,12 +645,14 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   },
                                 )
                                 .toList();
+
                     // Kiểm tra địa chỉ
                     if (diaChi == null || diaChi.trim().isEmpty) {
                       showDialog(
                         context: context,
                         builder:
                             (context) => AlertDialog(
+                              backgroundColor: AppColors.alertDialog,
                               title: const Text(
                                 'Thiếu địa chỉ nhận hàng',
                                 style: TextStyle(
@@ -643,6 +680,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         context: context,
                         builder:
                             (context) => AlertDialog(
+                              backgroundColor: AppColors.alertDialog,
                               title: const Text(
                                 'Thiếu số điện thoại',
                                 style: TextStyle(
@@ -664,10 +702,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       );
                       return;
                     }
+
                     // Chuẩn bị dữ liệu gửi lên API
                     final hoadonData = {
                       'id_kh': int.tryParse(userId) ?? 0,
-
                       'tong_gia_sp': totalProduct.round(),
                       'tonggia': totalPayment.round(),
                       'tien_ship': 30000,
@@ -682,49 +720,29 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     if (usedPoints > 0) {
                       hoadonData['used_points'] = usedPoints;
                     }
-                    // Nếu không có voucher thì xóa trường id_voucher để tránh lỗi validate
                     if (hoadonData['id_voucher'] == null) {
                       hoadonData.remove('id_voucher');
                     }
-                    print('Dữ liệu gửi lên API################: $hoadonData');
-                    // 3. Lưu hóa đơn lên SQL
-                    try {
-                      final hoaDonController = HoaDonController();
-                      final result = await hoaDonController.addHoaDon(
-                        hoadonData,
-                      );
 
-                      if (result != null && result['mahd'] != null) {
-                        // Nếu có voucher, gọi API giảm số lượng voucher
-                        if (selectedVoucher != null) {
-                          final voucherController = VoucherController();
-                          await voucherController.useVoucher(
-                            selectedVoucher!['id_voucher'],
-                          );
-                        }
-                        // XÓA GIỎ HÀNG SAU KHI THANH TOÁN
-                        cartController.clearCart();
-                        // 4. Chuyển sang trang Đơn hàng
-                        if (!mounted) return;
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (context) =>
-                                    DonHangScreen(userData: widget.userData),
-                          ),
-                        );
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Tạo hóa đơn thất bại!'),
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Lỗi tạo hóa đơn: $e')),
+                    // --- PHÂN NHÁNH THANH TOÁN ---
+                    if (paymentMethod == 'stripe') {
+                      // Nếu chọn Stripe, chuyển sang màn hình nhập thẻ
+                      final stripeResult = await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => StripePaymentScreen(
+                                amount: totalPayment.round(),
+                              ),
+                        ),
                       );
+                      if (stripeResult == true) {
+                        // Nếu thanh toán Stripe thành công, lưu hóa đơn như COD
+                        await _saveOrder(hoadonData);
+                      }
+                    } else {
+                      // Nếu chọn COD, lưu hóa đơn luôn
+                      await _saveOrder(hoadonData);
                     }
                   },
                   style: ElevatedButton.styleFrom(

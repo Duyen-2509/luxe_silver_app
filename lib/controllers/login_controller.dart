@@ -60,6 +60,7 @@ class LoginController {
           email: email,
           name: name,
           phone: phone,
+          token: googleAuth.idToken ?? '',
         );
       }
       return null;

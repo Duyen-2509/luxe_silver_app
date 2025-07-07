@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/repository/contact_info_repository.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../controllers/contact_info_controller.dart';
@@ -18,6 +19,7 @@ class ContactDialog {
       context: context,
       builder:
           (context) => AlertDialog(
+            backgroundColor: AppColors.alertDialog,
             title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -26,8 +28,12 @@ class ContactDialog {
                   IconButton(
                     icon: const Icon(Icons.edit, color: Colors.blue),
                     onPressed: () async {
-                      Navigator.pop(context); // Đóng dialog hiện tại
-                      await _showEditContactDialog(context, controller, id);
+                      Navigator.pop(context);
+                      await _showEditContactDialog(
+                        Navigator.of(context).context,
+                        controller,
+                        id,
+                      );
                     },
                   ),
               ],
@@ -168,6 +174,7 @@ class ContactDialog {
       context: context,
       builder:
           (context) => AlertDialog(
+            backgroundColor: AppColors.alertDialog,
             title: Text('Liên hệ thủ công'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -211,6 +218,7 @@ class ContactDialog {
       context: context,
       builder:
           (context) => AlertDialog(
+            backgroundColor: AppColors.alertDialog,
             title: Text('Hướng dẫn kết nối Zalo'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -261,7 +269,7 @@ class ContactDialog {
   }
 
   static Future<void> _showEditContactDialog(
-    BuildContext context,
+    BuildContext parentContext, // Đổi tên tham số
     ContactInfoController controller,
     int id,
   ) async {
@@ -269,9 +277,10 @@ class ContactDialog {
     final zaloController = TextEditingController(text: controller.phoneZalo);
 
     await showDialog(
-      context: context,
+      context: parentContext, // Dùng context cha
       builder:
           (context) => AlertDialog(
+            backgroundColor: AppColors.alertDialog,
             title: const Text('Sửa thông tin liên hệ'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -304,12 +313,17 @@ class ContactDialog {
                   );
                   Navigator.pop(context);
                   if (success) {
-                    _showSuccessSnackBar(context, 'Cập nhật thành công!');
+                    _showSuccessSnackBar(parentContext, 'Cập nhật thành công!');
                     // Reload lại dialog liên hệ
                     await controller.loadContactInfo(id);
-                    show(context, controller, id, isAdmin: true);
+                    show(
+                      parentContext,
+                      controller,
+                      id,
+                      isAdmin: true,
+                    ); // Dùng context cha
                   } else {
-                    _showSuccessSnackBar(context, 'Cập nhật thất bại!');
+                    _showSuccessSnackBar(parentContext, 'Cập nhật thất bại!');
                   }
                 },
                 child: const Text('Lưu'),

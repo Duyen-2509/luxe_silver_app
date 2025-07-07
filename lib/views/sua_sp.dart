@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import '../models/sanPham_model.dart';
 import '../controllers/product_controller.dart';
 import '../repository/product_repository.dart';
@@ -119,6 +120,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          backgroundColor: AppColors.alertDialog,
           title: const Text('Chọn nguồn ảnh'),
           content: Column(
             mainAxisSize: MainAxisSize.min,

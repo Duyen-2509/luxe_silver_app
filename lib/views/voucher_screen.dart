@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/controllers/voucher_controller.dart';
 import 'package:luxe_silver_app/views/voucher_add.dart';
 import 'package:luxe_silver_app/views/voucher_cart.dart';
@@ -55,7 +56,10 @@ class _VoucherScreenState extends State<VoucherScreen> {
 
     return Scaffold(
       // Thanh tiêu đề
-      appBar: AppBar(title: Text('Voucher')),
+      appBar: AppBar(
+        title: Text('Voucher'),
+        backgroundColor: AppColors.appBarBackground,
+      ),
 
       // Nội dung chính - danh sách voucher
       body: FutureBuilder<List<Map<String, dynamic>>>(
@@ -340,6 +344,7 @@ class _VoucherScreenState extends State<VoucherScreen> {
       floatingActionButton:
           widget.userData['role'] == 'admin'
               ? FloatingActionButton(
+                backgroundColor: AppColors.appBarBackground,
                 onPressed: () {
                   // Chuyển đến màn hình thêm voucher
                   Navigator.push(

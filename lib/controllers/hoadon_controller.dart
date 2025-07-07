@@ -24,6 +24,11 @@ class HoaDonController {
     return await _repository.daGiaoHang(mahd);
   }
 
+  // Xác nhận đã giao tới khách (nhân viên)
+  Future<bool> daGiaoToi(String mahd) async {
+    return await _repository.daGiaoToi(mahd);
+  }
+
   // Xác nhận đã nhận hàng (khách)
   Future<bool> daNhanHang(String mahd) async {
     return await _repository.daNhanHang(mahd);

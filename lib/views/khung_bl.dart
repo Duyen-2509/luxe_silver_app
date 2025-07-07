@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import '../controllers/comment_controller.dart';
 import '../repository/comment_repository.dart';
 import '../services/api_service.dart';
@@ -268,6 +269,7 @@ class _CommentSectionState extends State<CommentSection> {
       context: context,
       builder:
           (context) => AlertDialog(
+            backgroundColor: AppColors.alertDialog,
             title: Text(title),
             content: Text(content),
             actions: [

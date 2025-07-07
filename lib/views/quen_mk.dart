@@ -108,7 +108,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Quên mật khẩu'),
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.appBarBackground,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),

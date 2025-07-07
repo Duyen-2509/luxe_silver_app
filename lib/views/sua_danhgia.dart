@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/views/chi_tiet_sp.dart';
 import '../controllers/comment_controller.dart';
 import '../repository/comment_repository.dart';
@@ -41,7 +42,10 @@ class _SuaDanhGiaScreenState extends State<SuaDanhGiaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Sửa đánh giá')),
+      appBar: AppBar(
+        title: const Text('Sửa đánh giá'),
+        backgroundColor: AppColors.appBarBackground,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

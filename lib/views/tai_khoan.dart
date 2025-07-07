@@ -7,8 +7,10 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:luxe_silver_app/controllers/user_controller.dart';
 import 'package:luxe_silver_app/repository/user_repository.dart';
 import 'package:luxe_silver_app/services/api_service.dart';
+import 'package:luxe_silver_app/views/trang_chu_tam.dart';
 import '../services/vietnam_location_api.dart';
 import '../constant/image.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
   final Map<String, dynamic> userData;
@@ -39,6 +41,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return idNvRaw is int ? idNvRaw : int.tryParse(idNvRaw?.toString() ?? '');
     }
     return null;
+  }
+
+  Future<void> signOutAll() async {
+    await FirebaseAuth.instance.signOut();
+    await GoogleSignIn().signOut();
+
+    // XÓA TOKEN khi đăng xuất
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('token');
   }
 
   // Hàm cập nhật profile lên server
@@ -74,7 +85,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         idNv: currentUserId!,
         ten: data['ten'],
         sodienthoai: data['sodienthoai'],
-        password: data['password'],
+        //password: data['password'],
         diachi: data['diachi'],
         ngaysinh: data['ngaysinh'],
         gioitinh: data['gioitinh'],
@@ -260,7 +271,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const Divider(),
 
                 // Số điện thoại
-                if (role.trim().toLowerCase() != 'admin') ...[
+                if (role.trim().toLowerCase() == 'khach_hang') ...[
                   ListTile(
                     leading: const Icon(Icons.phone),
                     title: const Text('Số điện thoại'),
@@ -286,8 +297,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
 
                 // Email
-                if ((role.trim().toLowerCase() != 'admin') &&
-                    (role.trim().toLowerCase() != 'nhan_vien')) ...[
+                if ((role.trim().toLowerCase() == 'khach_hang')) ...[
                   ListTile(
                     leading: const Icon(Icons.email),
                     title: const Text('Email'),
@@ -386,7 +396,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 const Divider(),
 
                 // Đổi mật khẩu
-                if (role != 'admin')
+                if (role == 'khach_hang')
                   ListTile(
                     leading: const Icon(Icons.lock),
                     title: const Text('Đổi mật khẩu'),
@@ -407,9 +417,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ElevatedButton(
                   onPressed: () async {
                     await signOutAll();
-                    Navigator.pushNamedAndRemoveUntil(
+                    Navigator.pushAndRemoveUntil(
                       context,
-                      '/login',
+                      MaterialPageRoute(
+                        builder: (context) => const GuestHomeScreen(),
+                      ),
                       (route) => false,
                     );
                   },
@@ -448,6 +460,7 @@ void showNameDialog(
     context: context,
     builder: (context) {
       return AlertDialog(
+        backgroundColor: AppColors.alertDialog,
         title: const Text('Họ tên'),
         content: TextField(
           controller: controller,
@@ -486,6 +499,7 @@ void showPhoneDialog(
       return StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
+            backgroundColor: AppColors.alertDialog,
             title: const Text('Số điện thoại'),
             content: TextField(
               decoration: InputDecoration(
@@ -538,6 +552,7 @@ void showEmailDialog(
       return StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
+            backgroundColor: AppColors.alertDialog,
             title: const Text('Email'),
             content: TextField(
               decoration: InputDecoration(
@@ -588,6 +603,7 @@ void showChangePasswordDialog({
       return StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
+            backgroundColor: AppColors.alertDialog,
             title: const Text('Đổi mật khẩu'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -703,6 +719,7 @@ void showGenderDialog(
       return StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
+            backgroundColor: AppColors.alertDialog,
             title: const Text('Chọn giới tính'),
             content: DropdownButton<String>(
               value: selectedGender,
@@ -793,28 +810,34 @@ class _AddressDialogState extends State<_AddressDialog> {
     });
   }
 
-  void _loadDistricts(int cityId) async {
+  Future<void> _loadDistricts(int cityId) async {
+    setState(() {
+      districts = [];
+      wards = [];
+      selectedDistrict = null;
+      selectedWard = null;
+    });
     final data = await fetchDistricts(cityId);
     setState(() {
       districts = data;
-      selectedDistrict = districts.isNotEmpty ? districts.first : null;
-      wards = [];
-      selectedWard = null;
-      if (selectedDistrict != null) _loadWards(selectedDistrict!['code']);
     });
   }
 
-  void _loadWards(int districtId) async {
+  Future<void> _loadWards(int districtId) async {
+    setState(() {
+      wards = [];
+      selectedWard = null;
+    });
     final data = await fetchWards(districtId);
     setState(() {
       wards = data;
-      selectedWard = wards.isNotEmpty ? wards.first : null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      backgroundColor: AppColors.alertDialog,
       title: const Text('Chỉnh sửa địa chỉ'),
       content: SingleChildScrollView(
         child: Column(
@@ -921,6 +944,7 @@ extension _ProfileScreenStateBirthdayDialog on _ProfileScreenState {
       context: context,
       builder: (context) {
         return AlertDialog(
+          backgroundColor: AppColors.alertDialog,
           title: const Text('Chỉnh sửa ngày sinh'),
           content: Column(
             mainAxisSize: MainAxisSize.min,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/controllers/hoadon_controller.dart';
 import 'package:luxe_silver_app/repository/hoadon_repository.dart';
 
@@ -93,36 +94,42 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: futureChiTiet,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting ||
-              hoaDonInfo == null) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text('Lỗi: ${snapshot.error}'));
-          }
-          final chitiet = snapshot.data ?? [];
-          if (chitiet.isEmpty) {
-            return const Center(child: Text('Không có chi tiết đơn hàng'));
-          }
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildOrderInfoCard(),
-                const SizedBox(height: 20),
-                _buildProductList(chitiet),
-                const SizedBox(height: 20),
-                _buildPaymentSummary(),
-                const SizedBox(height: 20),
-                _buildActionButtons(),
-              ],
-            ),
-          );
+      body: RefreshIndicator(
+        onRefresh: () async {
+          _loadData();
+          await futureChiTiet;
         },
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: futureChiTiet,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting ||
+                hoaDonInfo == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text('Lỗi: ${snapshot.error}'));
+            }
+            final chitiet = snapshot.data ?? [];
+            if (chitiet.isEmpty) {
+              return const Center(child: Text('Không có chi tiết đơn hàng'));
+            }
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildOrderInfoCard(),
+                  const SizedBox(height: 20),
+                  _buildProductList(chitiet),
+                  const SizedBox(height: 20),
+                  _buildPaymentSummary(),
+                  const SizedBox(height: 20),
+                  _buildActionButtons(),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -510,6 +517,7 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
                 builder: (context) {
                   String input = '';
                   return AlertDialog(
+                    backgroundColor: AppColors.alertDialog,
                     title: const Text('Lý do hủy đơn'),
                     content: TextField(
                       autofocus: true,
@@ -698,6 +706,7 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
                   builder: (context) {
                     String input = '';
                     return AlertDialog(
+                      backgroundColor: AppColors.alertDialog,
                       title: const Text('Lý do thu hồi hàng trả'),
                       content: TextField(
                         autofocus: true,
@@ -786,13 +795,13 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
                   widget.mahd,
                   idNv,
                 );
-                // Chuyển chờ xử lý
-                final ok = await hoaDonController.daGiaoHang(widget.mahd);
+                // Gọi API ĐÃ GIAO TỚI (đúng flow)
+                final ok = await hoaDonController.daGiaoToi(widget.mahd);
                 if (okNv && ok && mounted) {
-                  _showSnackBar('Đã xác nhận khách đã nhận hàng', Colors.green);
+                  _showSnackBar('Đã xác nhận giao tới khách', Colors.green);
                   setState(() {
-                    hoaDonInfo?['id_ttdh'] = 4;
-                    hoaDonInfo?['ten_trangthai'] = 'Đã nhận';
+                    // Không cập nhật id_ttdh = 4 ở đây, chỉ cập nhật trạng thái phụ
+                    hoaDonInfo?['trangthai'] = 2;
                     hoaDonInfo?['id_nv'] = idNv;
                     hoaDonInfo?['ten_nhanvien'] = tenNv;
                   });
@@ -1009,6 +1018,7 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
                 builder: (context) {
                   String input = '';
                   return AlertDialog(
+                    backgroundColor: AppColors.alertDialog,
                     title: const Text('Lý do không duyệt trả hàng'),
                     content: TextField(
                       autofocus: true,

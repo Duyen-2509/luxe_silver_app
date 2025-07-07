@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import 'package:luxe_silver_app/controllers/voucher_controller.dart';
 
 class AddVoucherScreen extends StatefulWidget {
@@ -56,6 +57,7 @@ class _AddVoucherScreenState extends State<AddVoucherScreen> {
       appBar: AppBar(
         title: const Text('Thêm Voucher'),
         leading: BackButton(),
+        backgroundColor: AppColors.appBarBackground,
         elevation: 1,
       ),
       body: SingleChildScrollView(

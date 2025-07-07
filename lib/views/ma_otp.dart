@@ -25,7 +25,7 @@ class _OtpScreenState extends State<OtpScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Xác thực OTP'),
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.appBarBackground,
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),

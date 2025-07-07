@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:luxe_silver_app/constant/app_color.dart';
 import '../controllers/thongke_controller.dart';
 
 class ThongKeScreen extends StatefulWidget {
@@ -111,6 +112,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: AppColors.appBarBackground,
         title: Text(
           'Thống kê',
           style: TextStyle(fontSize: isSmallScreen ? 18 : 20),
