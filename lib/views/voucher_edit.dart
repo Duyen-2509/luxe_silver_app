@@ -58,12 +58,45 @@ class _VoucherEditScreenState extends State<VoucherEditScreen> {
     final types = await voucherController.fetchVoucherTypesRaw();
     setState(() {
       voucherTypes = types;
-      // Nếu loại cũ có trong danh sách thì chọn, không thì chọn loại đầu tiên
       final oldType = widget.voucher['id_loai_voucher']?.toString();
       if (voucherTypes.any((e) => e['id_loai_voucher'].toString() == oldType)) {
         _selectedType = oldType;
       } else if (voucherTypes.isNotEmpty) {
         _selectedType = voucherTypes[0]['id_loai_voucher'].toString();
+      }
+    });
+  }
+
+  void showAppDialog(
+    BuildContext context,
+    String message, {
+    bool isSuccess = false,
+  }) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Colors.white,
+            title: const Text(
+              'Thông báo',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            content: Text(
+              message,
+              style: const TextStyle(color: Colors.black, fontSize: 16),
+            ),
+          ),
+    );
+
+    Future.delayed(const Duration(seconds: 1), () {
+      Navigator.of(context, rootNavigator: true).pop();
+      if (isSuccess) {
+        Navigator.pop(context, true);
       }
     });
   }
@@ -245,11 +278,7 @@ class _VoucherEditScreenState extends State<VoucherEditScreen> {
                       final id =
                           widget.voucher['id'] ?? widget.voucher['id_voucher'];
                       if (id == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Không tìm thấy ID voucher!'),
-                          ),
-                        );
+                        showAppDialog(context, 'Không tìm thấy ID voucher!');
                         return;
                       }
                       final success = await voucherController.editVoucher(
@@ -257,23 +286,13 @@ class _VoucherEditScreenState extends State<VoucherEditScreen> {
                         data,
                       );
                       if (success) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Cập nhật voucher thành công!'),
-                          ),
-                        );
+                        showAppDialog(context, 'Cập nhật voucher thành công!');
                         Navigator.pop(context, true);
                       } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Cập nhật thất bại!')),
-                        );
+                        showAppDialog(context, 'Cập nhật thất bại!');
                       }
                     } else if (_selectedRange == null) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Vui lòng chọn khoảng thời gian'),
-                        ),
-                      );
+                      showAppDialog(context, 'Vui lòng chọn khoảng thời gian');
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -333,16 +352,10 @@ class _VoucherEditScreenState extends State<VoucherEditScreen> {
                           id is int ? id : int.tryParse(id.toString()) ?? 0,
                         );
                         if (ok && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Đã hiện voucher')),
-                          );
+                          showAppDialog(context, 'Đã hiện voucher');
                           Navigator.pop(context, true);
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Hiện voucher thất bại!'),
-                            ),
-                          );
+                          showAppDialog(context, 'Hiện voucher thất bại!');
                         }
                       }
                     },
@@ -388,16 +401,10 @@ class _VoucherEditScreenState extends State<VoucherEditScreen> {
                           id is int ? id : int.tryParse(id.toString()) ?? 0,
                         );
                         if (ok && context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Đã ẩn voucher')),
-                          );
+                          showAppDialog(context, 'Đã ẩn voucher');
                           Navigator.pop(context, true);
                         } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Ẩn voucher thất bại!'),
-                            ),
-                          );
+                          showAppDialog(context, 'Ẩn voucher thất bại!');
                         }
                       }
                     },

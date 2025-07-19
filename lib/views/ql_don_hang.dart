@@ -240,7 +240,7 @@ class _QLDonHangScreenState extends State<QLDonHangScreen> {
                 setState(() {
                   futureHoaDon = HoaDonController().fetchHoaDonList();
                 });
-                // Đợi dữ liệu load xong để tránh loading mãi
+
                 await futureHoaDon;
               },
               child: FutureBuilder<List<Map<String, dynamic>>>(
@@ -544,7 +544,7 @@ class _QLDonHangScreenState extends State<QLDonHangScreen> {
                                           // Gán nhân viên xử lý cho đơn hàng
                                           final okNv = await HoaDonController()
                                               .ganNhanVien(hd['mahd'], idNv);
-                                          // Gọi API cập nhật trạng thái sang Đang xử lý
+
                                           final okTrangThai =
                                               await HoaDonController().dangXuLy(
                                                 hd['mahd'],

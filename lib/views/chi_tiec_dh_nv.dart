@@ -577,7 +577,7 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
           ),
         ),
         const SizedBox(width: 12),
-        // Xác nhận đơn (gán nhân viên xử lý)
+        // gán nhân viên xử lý
         Expanded(
           child: ElevatedButton.icon(
             onPressed: () async {
@@ -596,7 +596,7 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
                 widget.mahd,
                 idNv,
               );
-              // Gọi API cập nhật trạng thái sang Đang xử lý
+
               final okTrangThai = await hoaDonController.dangXuLy(widget.mahd);
               if (okNv && okTrangThai && mounted) {
                 _showSnackBar('Đã xác nhận đơn', Colors.green);
@@ -646,7 +646,6 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
             _showSnackBar('Không xác định được mã nhân viên!', Colors.red);
             return;
           }
-          // Gán nhân viên xử lý cho đơn hàng (nếu chưa có hoặc muốn cập nhật lại)
           final okNv = await hoaDonController.ganNhanVien(widget.mahd, idNv);
           // Chuyển trạng thái sang Đang giao
           final ok = await hoaDonController.daGiaoHang(widget.mahd);
@@ -790,17 +789,16 @@ class _ChiTietDonHangNVScreenState extends State<ChiTietDonHangNVScreen> {
                   );
                   return;
                 }
-                // Gán nhân viên xử lý cho đơn hàng (nếu chưa có hoặc muốn cập nhật lại)
+                // Gán nhân viên xử lý cho đơn hàng
                 final okNv = await hoaDonController.ganNhanVien(
                   widget.mahd,
                   idNv,
                 );
-                // Gọi API ĐÃ GIAO TỚI (đúng flow)
+                // Gọi API ĐÃ GIAO TỚI
                 final ok = await hoaDonController.daGiaoToi(widget.mahd);
                 if (okNv && ok && mounted) {
                   _showSnackBar('Đã xác nhận giao tới khách', Colors.green);
                   setState(() {
-                    // Không cập nhật id_ttdh = 4 ở đây, chỉ cập nhật trạng thái phụ
                     hoaDonInfo?['trangthai'] = 2;
                     hoaDonInfo?['id_nv'] = idNv;
                     hoaDonInfo?['ten_nhanvien'] = tenNv;

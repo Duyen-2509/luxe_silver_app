@@ -84,13 +84,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final result = await userRepository.updateStaff(
         idNv: currentUserId!,
         ten: data['ten'],
-        sodienthoai: data['sodienthoai'],
+        //: data['sodienthoai'],
         //password: data['password'],
         diachi: data['diachi'],
         ngaysinh: data['ngaysinh'],
         gioitinh: data['gioitinh'],
       );
-      success = result['success'] == true || result['status'] == true;
+      success =
+          result['message']?.toString().toLowerCase().contains('thành công') ==
+          true;
     }
 
     if (success) {
@@ -171,7 +173,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else {
       diem = 0;
     }
-    // // Sửa tại đây: chỉ reload nếu là khách hàng
     if (role == 'khach_hang') {
       reloadUserData();
     }
@@ -704,7 +705,7 @@ void showChangePasswordDialog({
 }
 
 //Giới tính
-// Dialog đổi giới tính (trả về giá trị mới qua callback)
+
 void showGenderDialog(
   BuildContext context,
   String currentGender,

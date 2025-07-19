@@ -56,7 +56,7 @@ class UserController {
   Future<Map<String, dynamic>> addStaff({
     required String ten,
     required String sodienthoai,
-    required String email,
+    //required String email,
     required String password,
     String? diachi,
     String? ngaysinh,
@@ -65,7 +65,7 @@ class UserController {
     return await userRepository.addStaff(
       ten: ten,
       sodienthoai: sodienthoai,
-      email: email,
+      //email: email,
       password: password,
       diachi: diachi,
       ngaysinh: ngaysinh,
@@ -76,9 +76,6 @@ class UserController {
   Future<Map<String, dynamic>> updateStaff({
     required int idNv,
     String? ten,
-    String? sodienthoai,
-    String? email,
-    String? password,
     String? diachi,
     String? ngaysinh,
     String? gioitinh,
@@ -86,9 +83,6 @@ class UserController {
     return await userRepository.updateStaff(
       idNv: idNv,
       ten: ten,
-      sodienthoai: sodienthoai,
-      email: email,
-      password: password,
       diachi: diachi,
       ngaysinh: ngaysinh,
       gioitinh: gioitinh,

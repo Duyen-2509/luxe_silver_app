@@ -5,9 +5,10 @@ import 'package:luxe_silver_app/controllers/voucher_controller.dart';
 import 'package:luxe_silver_app/models/giohang_model.dart';
 import 'package:luxe_silver_app/models/sanPham_model.dart';
 import 'package:luxe_silver_app/repository/tienship_repository.dart';
+import 'package:luxe_silver_app/repository/user_repository.dart';
+import 'package:luxe_silver_app/services/api_service.dart';
 import 'package:luxe_silver_app/views/dia_chi_nhanhang.dart';
 import 'package:luxe_silver_app/views/don_hang.dart';
-import 'package:luxe_silver_app/views/gio_hang.dart';
 import 'package:luxe_silver_app/views/stripe_payment_screen.dart';
 import 'package:luxe_silver_app/views/voucher_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -53,9 +54,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     return '${price.toStringAsFixed(0).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')} vnđ';
   }
 
+  late Map<String, dynamic> userData;
+  bool _loadingUser = true;
+
   @override
   void initState() {
     super.initState();
+    userData = widget.userData;
+    _loadingUser = true;
+    _reloadUserData();
     _loadShippingInfo();
     _fetchShippingFee();
   }
@@ -65,16 +72,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     try {
       final hoaDonController = HoaDonController();
       final result = await hoaDonController.addHoaDon(hoadonData);
-
       if (result != null && result['mahd'] != null) {
-        // Nếu có voucher, gọi API giảm số lượng voucher
         if (selectedVoucher != null) {
           final voucherController = VoucherController();
           await voucherController.useVoucher(selectedVoucher!['id_voucher']);
         }
-        // XÓA GIỎ HÀNG SAU KHI THANH TOÁN
-        cartController.clearCart();
-        // 4. Chuyển sang trang Đơn hàng
+        // Xóa các sản phẩm đã thanh toán khỏi giỏ hàng
+        cartController.removeManyFromCart(widget.selectedItems);
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
@@ -83,14 +87,69 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
           ),
         );
       } else {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Tạo hóa đơn thất bại!')));
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder:
+              (context) => AlertDialog(
+                backgroundColor: Colors.white,
+                title: const Text(
+                  'Thông báo',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+                content: const Text(
+                  'Tạo hóa đơn thất bại!',
+                  style: TextStyle(color: Colors.black, fontSize: 16),
+                ),
+              ),
+        );
+        Future.delayed(const Duration(seconds: 1), () {
+          Navigator.of(context, rootNavigator: true).pop();
+        });
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Lỗi tạo hóa đơn: $e')));
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder:
+            (context) => AlertDialog(
+              backgroundColor: Colors.white,
+              title: const Text(
+                'Thông báo',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+              content: const Text(
+                'Lỗi tạo hóa đơn',
+                style: TextStyle(color: Colors.black, fontSize: 16),
+              ),
+            ),
+      );
+      Future.delayed(const Duration(seconds: 1), () {
+        Navigator.of(context, rootNavigator: true).pop();
+      });
+    }
+  }
+
+  //load
+  Future<void> _reloadUserData() async {
+    final userRepo = UserRepository(ApiService());
+    final userId = widget.userData['id'];
+    if (userId != null) {
+      final newUserData = await userRepo.getUserById(userId);
+      if (mounted && newUserData != null) {
+        setState(() {
+          userData = {...widget.userData, ...newUserData};
+          _loadingUser = false;
+        });
+      }
     }
   }
 
@@ -121,10 +180,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Future<void> _loadShippingInfo() async {
     final prefs = await SharedPreferences.getInstance();
-    final userId =
-        widget.userData['id']?.toString() ??
-        widget.userData['sodienthoai'] ??
-        '';
+    final userId = userData['id']?.toString() ?? userData['sodienthoai'] ?? '';
     if (!mounted) return;
     setState(() {
       shippingName = prefs.getString('shippingName_$userId');
@@ -132,7 +188,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       final phone = prefs.getString('shippingPhone_$userId');
       shippingPhone =
           (phone == null || phone.isEmpty)
-              ? widget.userData['sodienthoai']?.toString() ?? ''
+              ? userData['sodienthoai']?.toString() ?? ''
               : phone;
     });
   }
@@ -166,10 +222,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             ? ((items[0] as Map<String, dynamic>)['giaDonVi'] as int) *
                 ((items[0] as Map<String, dynamic>)['soLuong'] as int)
             : cartController.totalPrice;
-
-    final totalPayment =
-        totalProduct + shippingFee - totalVoucher - pointDiscount;
-
+    final totalPayment = max(
+      0,
+      (totalProduct + shippingFee - totalVoucher - pointDiscount).toInt(),
+    );
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -222,19 +278,16 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  // Hiển thị tên người nhận: ưu tiên tên mới, nếu chưa có thì lấy tên user
-                                  'Người nhận: ${shippingName ?? widget.userData['ten']}',
+                                  'Người nhận: ${shippingName ?? userData['ten']}',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 Text(
-                                  // Hiển thị tên người nhận: ưu tiên tên mới, nếu chưa có thì lấy tên user
-                                  'SĐT: ${shippingPhone ?? widget.userData['sdt'] ?? ""}',
+                                  'SĐT: ${shippingPhone ?? userData['sdt'] ?? ""}',
                                   style: TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 SizedBox(height: 4),
                                 Text(
-                                  // Hiển thị địa chỉ nhận hàng: ưu tiên địa chỉ mới, nếu chưa có thì lấy địa chỉ user
-                                  'Địa chỉ: ${shippingAddress ?? widget.userData['diachi']}',
+                                  'Địa chỉ: ${shippingAddress ?? userData['diachi']}',
                                 ),
                               ],
                             ),
@@ -371,12 +424,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                         color: Colors.blue,
                                       ),
                                       title: Text(
-                                        'Thanh toán qua Stripe',
+                                        'Thanh toán qua thẻ',
                                         style: const TextStyle(fontSize: 14),
                                       ),
                                       onTap:
-                                          () =>
-                                              Navigator.pop(context, 'stripe'),
+                                          () => Navigator.pop(context, 'thẻ'),
                                     ),
                                   ],
                                 ),
@@ -440,13 +492,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             builder:
                                 (context) => VoucherScreen(
                                   cartTotal: widget.cartTotal,
-                                  userData: widget.userData,
+                                  userData: userData,
                                   selectedVoucher: selectedVoucher,
                                 ),
                           ),
                         );
-
-                        // Luôn cập nhật lại selectedVoucher và voucherDiscount, kể cả khi voucher == null
                         setState(() {
                           selectedVoucher = voucher;
                           if (voucher != null) {
@@ -463,6 +513,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           } else {
                             voucherDiscount = 0.0;
                           }
+
+                          // --- Giới hạn lại usedPoints ---
+                          final maxUserPoints = userData['diem'] ?? 0;
+                          final totalCanUsePoint =
+                              (totalProduct + shippingFee - voucherDiscount)
+                                  .clamp(0, double.infinity)
+                                  .toInt();
+
+                          if (usedPoints > totalCanUsePoint) {
+                            usedPoints = totalCanUsePoint;
+                          } else if (usedPoints < totalCanUsePoint) {
+                            usedPoints = min(maxUserPoints, totalCanUsePoint);
+                          }
+                          pointDiscount = usedPoints * 1;
                         });
                       },
                       child: Container(
@@ -512,17 +576,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             keyboardType: TextInputType.number,
                             decoration: InputDecoration(
                               labelText:
-                                  'Sử dụng điểm (tối đa: ${widget.userData['diem'] ?? 0})',
+                                  'Sử dụng điểm (tối đa: ${userData['diem'] ?? 0})',
                               border: OutlineInputBorder(),
                               isDense: true,
                             ),
                             onChanged: (value) {
                               setState(() {
-                                usedPoints = int.tryParse(value) ?? 0;
-                                final maxPoints = widget.userData['diem'] ?? 0;
-                                if (usedPoints > maxPoints)
-                                  usedPoints = maxPoints;
-                                if (usedPoints < 0) usedPoints = 0;
+                                final maxUserPoints = userData['diem'] ?? 0;
+                                final totalCanUsePoint = (totalProduct +
+                                        shippingFee -
+                                        voucherDiscount)
+                                    .clamp(0, double.infinity);
+                                int inputPoints = int.tryParse(value) ?? 0;
+                                // Không vượt quá điểm người dùng có và không vượt quá tổng tiền phải trả
+                                if (inputPoints > maxUserPoints)
+                                  inputPoints = maxUserPoints;
+                                if (inputPoints > totalCanUsePoint)
+                                  inputPoints = totalCanUsePoint.toInt();
+                                if (inputPoints < 0) inputPoints = 0;
+                                usedPoints = inputPoints;
                                 pointDiscount = usedPoints * 1;
                               });
                             },
@@ -571,7 +643,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         Text(
-                          formatPrice(totalPayment),
+                          formatPrice(totalPayment.toDouble()),
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -603,11 +675,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     // Lấy userId và các thông tin cần thiết
-                    final userId = widget.userData['id']?.toString() ?? '';
-                    final tenNguoiNhan = shippingName ?? widget.userData['ten'];
-                    final diaChi = shippingAddress ?? widget.userData['diachi'];
-                    final soDienThoai =
-                        shippingPhone ?? widget.userData['sdt'] ?? '';
+                    final userId = userData['id']?.toString() ?? '';
+                    final tenNguoiNhan = shippingName ?? userData['ten'];
+                    final diaChi = shippingAddress ?? userData['diachi'];
+                    final soDienThoai = shippingPhone ?? userData['sdt'] ?? '';
                     final diaChiFull = '$tenNguoiNhan - $soDienThoai - $diaChi';
                     final phuongThuc =
                         paymentMethod == 'cod'
@@ -631,7 +702,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                         : 0,
                               },
                             ]
-                            : cartController.cartItems
+                            : widget.selectedItems
                                 .map(
                                   (item) => {
                                     'id_sp': item.sanPham.idSp,
@@ -645,7 +716,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                   },
                                 )
                                 .toList();
-
                     // Kiểm tra địa chỉ
                     if (diaChi == null || diaChi.trim().isEmpty) {
                       showDialog(
@@ -708,7 +778,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       'id_kh': int.tryParse(userId) ?? 0,
                       'tong_gia_sp': totalProduct.round(),
                       'tonggia': totalPayment.round(),
-                      'tien_ship': 30000,
+                      'tien_ship': shippingFee.round(),
                       'id_voucher':
                           selectedVoucher != null
                               ? selectedVoucher!['id_voucher']
@@ -723,21 +793,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     if (hoadonData['id_voucher'] == null) {
                       hoadonData.remove('id_voucher');
                     }
-
+                    print(
+                      'Gửi lên API-------------------?????????????????//: $hoadonData',
+                    );
                     // --- PHÂN NHÁNH THANH TOÁN ---
-                    if (paymentMethod == 'stripe') {
-                      // Nếu chọn Stripe, chuyển sang màn hình nhập thẻ
+                    if (paymentMethod == 'thẻ') {
+                      // Nếu chọn thhẻ, chuyển sang màn hình nhập thẻ
                       final stripeResult = await Navigator.push(
                         context,
                         MaterialPageRoute(
                           builder:
                               (context) => StripePaymentScreen(
-                                amount: totalPayment.round(),
+                                soTien: totalPayment.round(),
                               ),
                         ),
                       );
                       if (stripeResult == true) {
-                        // Nếu thanh toán Stripe thành công, lưu hóa đơn như COD
+                        // Nếu thanh toán thẻ thành công, lưu hóa đơn như COD
                         await _saveOrder(hoadonData);
                       }
                     } else {

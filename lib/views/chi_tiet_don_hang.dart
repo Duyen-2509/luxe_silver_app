@@ -7,13 +7,9 @@ import 'package:luxe_silver_app/services/api_service.dart';
 import 'package:luxe_silver_app/views/danh_gia.dart';
 import 'package:luxe_silver_app/views/sua_danhgia.dart';
 
-/// Screen hiển thị chi tiết đơn hàng của khách hàng
-/// Bao gồm thông tin đơn hàng, danh sách sản phẩm, và các chức năng đánh giá
 class ChiTietDonHangScreen extends StatefulWidget {
-  /// Mã hóa đơn
   final String mahd;
-
-  /// Thông tin user đăng nhập
+  //thông tin user đăng nhập
   final Map<String, dynamic> userData;
 
   const ChiTietDonHangScreen({
@@ -27,16 +23,16 @@ class ChiTietDonHangScreen extends StatefulWidget {
 }
 
 class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
-  /// Future để load chi tiết hóa đơn
+  /// Future đ load chi tiết hóa đơn
   late Future<List<Map<String, dynamic>>> futureChiTiet;
 
   /// Thông tin tổng quan của hóa đơn
   Map<String, dynamic>? hoaDonInfo;
 
-  /// Controller để xử lý comment
+  /// Controller xl comment
   late CommentController commentController;
 
-  /// Controller để xử lý hóa đơn
+  /// Controller xl hóa đơn
   late HoaDonController hoaDonController;
 
   @override
@@ -75,13 +71,6 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     }
   }
 
-  /// Lấy bình luận của khách hàng cho sản phẩm cụ thể trong đơn hàng này
-  ///
-  /// [idSp] - ID sản phẩm
-  /// [mahd] - Mã hóa đơn
-  /// [idKh] - ID khách hàng
-  ///
-  /// Return: Map thông tin bình luận hoặc null nếu chưa có
   Future<Map<String, dynamic>?> fetchMyComment(
     int idSp,
     String mahd,
@@ -101,10 +90,6 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     }
   }
 
-  /// Format giá tiền theo định dạng Việt Nam
-  ///
-  /// [price] - Giá tiền cần format
-  /// Return: Chuỗi giá đã format (vd: "1.000.000 vnđ")
   String formatPrice(dynamic price) {
     if (price == null) return '0 vnđ';
 
@@ -115,7 +100,6 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
         ' vnđ';
   }
 
-  /// Hiển thị thông báo lỗi
   void _showErrorSnackBar(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -124,7 +108,6 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     }
   }
 
-  /// Hiển thị thông báo thành công
   void _showSuccessSnackBar(String message) {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -391,7 +374,6 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // Hiển thị lỗi nếu có
           if (snapshot.hasError) {
             return Center(
               child: Column(
@@ -420,7 +402,6 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
 
           final chitiet = snapshot.data ?? [];
 
-          // Hiển thị thông báo nếu không có dữ liệu
           if (chitiet.isEmpty) {
             return const Center(
               child: Text(
@@ -443,22 +424,22 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Widget hiển thị thông tin đơn hàng
+                  //hiển thị thông tin đơn hàng
                   _buildOrderInfoCard(),
 
                   const SizedBox(height: 20),
 
-                  // Widget hiển thị danh sách sản phẩm
+                  //hiển thị danh sách sản phẩm
                   _buildProductList(chitiet),
 
                   const SizedBox(height: 20),
 
-                  // Widget hiển thị chi tiết thanh toán
+                  //hiển thị chi tiết thanh toán
                   _buildPaymentSummary(),
 
                   const SizedBox(height: 20),
 
-                  // Widget hiển thị các nút action theo trạng thái
+                  // hiển thị các nút action theo trạng thái
                   _buildActionButtons(),
                 ],
               ),
@@ -469,7 +450,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     );
   }
 
-  /// Widget hiển thị thông tin tổng quan đơn hàng
+  ///hiển thị thông tin tổng quan đơn hàng
   Widget _buildOrderInfoCard() {
     return Container(
       width: double.infinity,
@@ -482,7 +463,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Mã đơn hàng
+          // Mdh
           Row(
             children: [
               const Icon(Icons.receipt_long, size: 20, color: Colors.blue),
@@ -499,7 +480,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
 
           const SizedBox(height: 12),
 
-          // Trạng thái đơn hàng
+          // tt đơn hàng
           Row(
             children: [
               const Icon(Icons.info_outline, size: 20, color: Colors.green),
@@ -531,7 +512,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
 
           const SizedBox(height: 12),
 
-          // Địa chỉ nhận hàng
+          // dc nhận hàng
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -561,7 +542,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
 
           const SizedBox(height: 12),
 
-          // Phương thức thanh toán
+          // Pttt
           Row(
             children: [
               const Icon(Icons.payment, size: 20, color: Colors.purple),
@@ -584,7 +565,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     );
   }
 
-  /// Lấy màu theo trạng thái đơn hàng
+  ///màu theo trạng thái đơn hàng
   Color _getStatusColor(int? statusId) {
     switch (statusId) {
       case 1: // Chờ xác nhận
@@ -604,7 +585,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     }
   }
 
-  /// Widget hiển thị danh sách sản phẩm
+  /// hiển thị danh sách sản phẩm
   Widget _buildProductList(List<Map<String, dynamic>> chitiet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -615,13 +596,12 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
         ),
         const SizedBox(height: 12),
 
-        // Hiển thị từng sản phẩm
         ...chitiet.map((product) => _buildProductCard(product)),
       ],
     );
   }
 
-  /// Widget hiển thị từng sản phẩm
+  /// hiển thị từng sản phẩm
   Widget _buildProductCard(Map<String, dynamic> product) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -667,7 +647,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     );
   }
 
-  /// Widget hiển thị hình ảnh sản phẩm
+  /// hiển thị hình ảnh sản phẩm
   Widget _buildProductImage(Map<String, dynamic> product) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(8),
@@ -697,7 +677,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     );
   }
 
-  /// Widget placeholder cho hình ảnh
+  /// placeholder cho hình ảnh
   Widget _buildPlaceholderImage() {
     return Container(
       width: 80,
@@ -710,7 +690,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     );
   }
 
-  /// Widget hiển thị chi tiết sản phẩm
+  ///  hiển thị chi tiết sản phẩm
   Widget _buildProductDetails(Map<String, dynamic> product) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -763,7 +743,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     );
   }
 
-  /// Widget hiển thị phần đánh giá sản phẩm
+  /// hiển thị phần đánh giá sản phẩm
   Widget _buildReviewSection(Map<String, dynamic> product) {
     return FutureBuilder<Map<String, dynamic>?>(
       future: fetchMyComment(
@@ -799,7 +779,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     );
   }
 
-  /// Widget nút đánh giá (khi chưa có đánh giá)
+  /// nút đánh giá (khi chưa có đánh giá)
   Widget _buildReviewButton(Map<String, dynamic> product) {
     return Row(
       children: [
@@ -821,7 +801,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     );
   }
 
-  /// Widget hiển thị đánh giá đã có
+  ///  hiển thị đánh giá đã có
   Widget _buildExistingReview(
     Map<String, dynamic> product,
     Map<String, dynamic> comment,
@@ -885,13 +865,11 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
         ),
 
         const SizedBox(height: 12),
-
-        // Các nút action
         Row(
           children: [
             const Spacer(),
 
-            // Nút sửa (nếu chưa vượt số lần sửa)
+            // Nút sửa
             if (soLanSua < maxSoLanSua) ...[
               OutlinedButton.icon(
                 onPressed: () => _navigateToEditReviewScreen(product, comment),
@@ -933,7 +911,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     );
   }
 
-  /// Widget hiển thị chi tiết thanh toán
+  /// hiển thị chi tiết thanh toán
   Widget _buildPaymentSummary() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -1025,7 +1003,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     return (tongGiaSp + tienShip) - tongGia;
   }
 
-  /// Widget hiển thị từng dòng trong bảng tổng kết thanh toán
+  /// hiển thị từng dòng trong bảng tổng kết thanh toán
   Widget _buildSummaryRow(
     String label,
     String value,
@@ -1061,7 +1039,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     );
   }
 
-  /// Widget hiển thị các nút action theo trạng thái đơn hàng
+  ///  hiển thị các nút action theo trạng thái đơn hàng
   Widget _buildActionButtons() {
     final trangThai = hoaDonInfo?['id_ttdh'];
 
@@ -1069,19 +1047,19 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
 
     switch (trangThai) {
       case 1: // Chờ xác nhận
-      case 2: // Đang xử lý
+      case 2:
         return _buildCancelButton();
 
-      case 3: // Đang giao
+      case 3:
         return _buildDeliveryButtons();
 
-      case 4: // Đã nhận
+      case 4:
         return _buildCompletedOrderInfo();
 
-      case 5: // Đã hủy
+      case 5:
         return _buildCancelledOrderInfo();
 
-      case 6: // Trả hàng
+      case 6:
         return _buildReturnOrderInfo();
 
       default:
@@ -1089,7 +1067,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     }
   }
 
-  /// Widget nút hủy đơn hàng
+  /// nút hủy đơn hàng
   Widget _buildCancelButton() {
     return SizedBox(
       width: double.infinity,
@@ -1108,7 +1086,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     );
   }
 
-  /// Widget các nút khi đơn hàng đang được giao
+  /// các nút khi đơn hàng đang được giao
   Widget _buildDeliveryButtons() {
     return Row(
       children: [
@@ -1159,7 +1137,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     );
   }
 
-  /// Widget thông tin đơn hàng đã hoàn thành
+  /// thông tin đơn hàng đã hoàn thành
   Widget _buildCompletedOrderInfo() {
     final tongGiaSp = hoaDonInfo?['tong_gia_sp'] ?? 0;
     final diemCong = (tongGiaSp * 0.005).round();
@@ -1205,7 +1183,7 @@ class _ChiTietDonHangScreenState extends State<ChiTietDonHangScreen> {
     );
   }
 
-  /// Widget thông tin đơn hàng đã hủy
+  /// thông tin đơn hàng đã hủy
   Widget _buildCancelledOrderInfo() {
     final lyDoKh = hoaDonInfo?['ly_do_kh'];
     final lyDoNv = hoaDonInfo?['ly_do_nv'];

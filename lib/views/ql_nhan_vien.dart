@@ -180,8 +180,8 @@ class _QLNhanVienScreenState extends State<QLNhanVienScreen> {
                                     await userController.hideStaff(nv['id_nv']);
                                     nv['trangthai'] = 0;
                                   }
-                                  _applyFilter(); // Cập nhật lại danh sách lọc
-                                  setState(() {}); // Cập nhật UI
+                                  _applyFilter();
+                                  setState(() {});
                                 }
                               },
                             ),
@@ -195,7 +195,6 @@ class _QLNhanVienScreenState extends State<QLNhanVienScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: AppColors.background,
         onPressed: () async {
-          // Chờ thêm nhân viên xong mới reload
           final result = await Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => ThemNhanVienScreen()),

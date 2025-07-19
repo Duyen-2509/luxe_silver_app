@@ -39,7 +39,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   /// Hàm xử lý đăng ký
   void _signUp(BuildContext context) async {
-    // Reset lỗi trước khi kiểm tra
     setState(() {
       nameError = null;
       phoneError = null;
@@ -113,13 +112,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
 
     if (result.containsKey('id')) {
-      // Đăng ký thành công, chuyển sang trang đăng nhập
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Đăng ký thành công!')));
-      Navigator.pop(context); // Quay về trang đăng nhập
+      Navigator.pop(context);
     } else {
-      // Đăng ký thất bại, hiển thị lỗi
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result['error'] ?? 'Đăng ký thất bại')),
       );
@@ -257,7 +254,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   }
                 },
               ),
-              // Đường dẫn chuyển sang đăng nhập
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [

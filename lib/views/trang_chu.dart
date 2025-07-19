@@ -123,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final repo = TienShipRepository();
       final success = await repo.updateTienShip(1, result);
       if (success) {
-        await _fetchShippingFee(); // <-- Thay vì chỉ setState, gọi lại API để lấy giá mới nhất
+        await _fetchShippingFee();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Cập nhật phí vận chuyển thành công')),
         );
@@ -135,7 +135,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Thêm method để refresh data
+  // refresh data
   Future<void> _refreshData() async {
     if (_isRefreshing) return;
 
@@ -144,7 +144,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      // Thêm delay nhỏ để có hiệu ứng refresh
+      // delay  để có hiệu ứng refresh
       await Future.delayed(const Duration(milliseconds: 500));
       setState(() {});
     } finally {
@@ -164,13 +164,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // Method để ẩn bàn phím và bỏ focus
+  // ẩn bàn phím
   void _dismissKeyboard() {
     _searchFocusNode.unfocus();
     FocusScope.of(context).unfocus();
   }
 
-  // Method xử lý tìm kiếm
+  //  xử lý tìm kiếm
   void _onSearchChanged(String value) {
     setState(() {
       _filteredProducts = ProductSearchHelper.searchProductsByName(
@@ -180,12 +180,11 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // Method xử lý khi submit search
+  // ử lý khi submit search
   void _onSearchSubmitted(String value) {
     _dismissKeyboard();
-    // Thêm logic xử lý tìm kiếm ở đây
     if (value.trim().isNotEmpty) {
-      // Có thể navigate đến trang tìm kiếm hoặc filter sản phẩm
+      ///////in ra coi
       print('Search submitted: $value');
     }
   }
@@ -310,9 +309,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _shippingFee = (list.first['gia'] as num).toDouble();
         });
       }
-    } catch (e) {
-      // Có thể show lỗi nếu cần
-    }
+    } catch (e) {}
   }
 
   @override
@@ -333,7 +330,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final double cartTotal = 0.0;
     return GestureDetector(
-      // Thêm GestureDetector để ẩn bàn phím khi tap outside
       onTap: _dismissKeyboard,
       child: Scaffold(
         key: _scaffoldKey,
@@ -344,7 +340,7 @@ class _HomeScreenState extends State<HomeScreen> {
           leading: IconButton(
             icon: const Icon(Icons.menu, color: Colors.black),
             onPressed: () {
-              _dismissKeyboard(); // Ẩn bàn phím trước khi mở drawer
+              _dismissKeyboard(); // Ẩn bàn phím
               _scaffoldKey.currentState?.openDrawer();
             },
           ),
@@ -541,7 +537,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       .toList(),
                               loai: 3,
                               gioiTinh: '',
-                              nhom: 'Bộ sưu tập',
+                              nhom: 'Bộ',
                               userData: widget.userData,
                             ),
                       ),
@@ -728,7 +724,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     double mainAxisSpacing;
 
                     if (screenWidth < 350) {
-                      // Màn hình rất nhỏ (iPhone SE, Android nhỏ)
+                      // Màn hình rất nhỏ (iPhone SE, android nhỏ)
                       crossAxisCount = 2;
                       childAspectRatio = 0.65;
                       crossAxisSpacing = 8;
@@ -740,7 +736,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       crossAxisSpacing = 12;
                       mainAxisSpacing = 12;
                     } else if (screenWidth < 600) {
-                      // Màn hình trung bình (hầu hết điện thoại)
+                      // Màn hình trung bình
                       crossAxisCount = 2;
                       childAspectRatio = 0.75;
                       crossAxisSpacing = 16;
@@ -762,7 +758,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     return GridView.builder(
                       physics: const AlwaysScrollableScrollPhysics(
                         parent: BouncingScrollPhysics(),
-                      ), // Đảm bảo pull-to-refresh hoạt động
+                      ),
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: crossAxisCount,
                         childAspectRatio: childAspectRatio,
@@ -814,7 +810,7 @@ class _HomeScreenState extends State<HomeScreen> {
             widget.userData['role'] == 'admin'
                 ? FloatingActionButton(
                   onPressed: () async {
-                    _dismissKeyboard(); // Ẩn bàn phím trước khi navigate
+                    _dismissKeyboard();
                     // Chờ khi AddProductScreen đóng lại
                     await Navigator.push(
                       context,
@@ -822,7 +818,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         builder: (context) => AddProductScreen(),
                       ),
                     );
-                    // Khi quay lại, gọi setState để rebuild và lấy dữ liệu mới
+                    //  setState để rebuild và lấy dữ liệu mới
                     setState(() {});
                   },
                   backgroundColor: AppColors.background,

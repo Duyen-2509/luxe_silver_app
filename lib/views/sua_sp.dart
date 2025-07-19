@@ -201,12 +201,33 @@ class _EditProductScreenState extends State<EditProductScreen> {
       isFreesize: isFreesize,
       donvi: sizeUnit,
     );
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(result ?? 'Có lỗi xảy ra')));
-    if (result != null && result.contains('thành công')) {
-      Navigator.pop(context, true);
-    }
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder:
+          (context) => AlertDialog(
+            backgroundColor: Colors.white,
+            title: Text(
+              'Thông báo',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+            content: Text(
+              result ?? 'Có lỗi xảy ra',
+              style: TextStyle(color: Colors.black, fontSize: 16),
+            ),
+          ),
+    );
+
+    Future.delayed(const Duration(seconds: 1), () {
+      Navigator.of(context, rootNavigator: true).pop();
+      if (result != null && result.contains('thành công')) {
+        Navigator.pop(context, true);
+      }
+    });
   }
 
   @override
@@ -491,7 +512,6 @@ class _EditProductScreenState extends State<EditProductScreen> {
                       setState(() {
                         isFreesize = val!;
                         if (isFreesize) {
-                          // Nếu đã có dữ liệu thì giữ lại, chỉ đổi donvi và size
                           if (sizeList.isEmpty) {
                             sizeList = [
                               {
@@ -660,6 +680,14 @@ class _EditProductScreenState extends State<EditProductScreen> {
                     _saveProduct();
                   }
                 },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
                 child: const Text('Lưu sản phẩm'),
               ),
             ],

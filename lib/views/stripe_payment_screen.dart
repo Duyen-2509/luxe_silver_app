@@ -3,8 +3,8 @@ import 'package:flutter_stripe/flutter_stripe.dart';
 import '../repository/stripe_repository.dart';
 
 class StripePaymentScreen extends StatefulWidget {
-  final int amount; // số tiền (VND)
-  const StripePaymentScreen({super.key, required this.amount});
+  final int soTien;
+  const StripePaymentScreen({super.key, required this.soTien});
 
   @override
   State<StripePaymentScreen> createState() => _StripePaymentScreenState();
@@ -13,11 +13,18 @@ class StripePaymentScreen extends StatefulWidget {
 class _StripePaymentScreenState extends State<StripePaymentScreen> {
   bool isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // Gọi tự động khi vào màn hình
+    Future.microtask(payWithStripe);
+  }
+
   Future<void> payWithStripe() async {
     setState(() => isLoading = true);
 
     final repo = StripeRepository();
-    final clientSecret = await repo.createPaymentIntent(widget.amount, 'vnd');
+    final clientSecret = await repo.createPaymentIntent(widget.soTien, 'vnd');
     if (clientSecret == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Không tạo được payment intent')),
@@ -37,11 +44,11 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Thanh toán thành công!')));
-      Navigator.pop(context, true); // Trả về true nếu muốn
+      Navigator.pop(context, true);
     } catch (e) {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Thanh toán thất bại: $e')));
+      ).showSnackBar(SnackBar(content: Text('Thanh toán thất bại')));
     }
     setState(() => isLoading = false);
   }
@@ -49,15 +56,12 @@ class _StripePaymentScreenState extends State<StripePaymentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Thanh toán Stripe')),
+      appBar: AppBar(title: const Text('Thanh toán thẻ')),
       body: Center(
         child:
             isLoading
                 ? const CircularProgressIndicator()
-                : ElevatedButton(
-                  onPressed: payWithStripe,
-                  child: const Text('Thanh toán test với Stripe'),
-                ),
+                : const SizedBox.shrink(),
       ),
     );
   }

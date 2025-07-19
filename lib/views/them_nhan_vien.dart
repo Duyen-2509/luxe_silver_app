@@ -17,7 +17,6 @@ class _ThemNhanVienScreenState extends State<ThemNhanVienScreen> {
   final _formKey = GlobalKey<FormState>();
   final _tenController = TextEditingController();
   final _sdtController = TextEditingController();
-  final _emailController = TextEditingController();
   final _matKhauController = TextEditingController();
   String? gioiTinh = 'Nữ';
   DateTime? selectedDate;
@@ -127,21 +126,6 @@ class _ThemNhanVienScreenState extends State<ThemNhanVienScreen> {
                   return null;
                 },
               ),
-              // const SizedBox(height: 12),
-              // TextFormField(
-              //   controller: _emailController,
-              //   decoration: const InputDecoration(labelText: 'Email'),
-              //   keyboardType: TextInputType.emailAddress,
-              //   validator: (value) {
-              //     if (value == null || value.trim().isEmpty) {
-              //       return 'Vui lòng nhập email';
-              //     }
-              //     if (!validator.emailValidator(value.trim())) {
-              //       return 'Email không hợp lệ';
-              //     }
-              //     return null;
-              //   },
-              // ),
               const SizedBox(height: 12),
               // Địa chỉ
               const Text(
@@ -352,34 +336,41 @@ class _ThemNhanVienScreenState extends State<ThemNhanVienScreen> {
                       final userController = UserController(
                         UserRepository(ApiService()),
                       );
-                      final result = await userController.addStaff(
-                        ten: _tenController.text.trim(),
-                        sodienthoai: _sdtController.text.trim(),
-                        email: _emailController.text.trim(),
-                        password: _matKhauController.text.trim(),
-                        diachi: fullAddress.isEmpty ? null : fullAddress,
-                        gioitinh: gioiTinh,
-                        ngaysinh:
-                            selectedDate != null
-                                ? '${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}'
-                                : DateTime.now().toIso8601String().substring(
-                                  0,
-                                  10,
-                                ),
-                      );
-                      if (result['id'] != null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Thêm nhân viên thành công'),
-                          ),
+                      try {
+                        final result = await userController.addStaff(
+                          ten: _tenController.text.trim(),
+                          sodienthoai: _sdtController.text.trim(),
+                          password: _matKhauController.text.trim(),
+                          diachi: fullAddress.isEmpty ? null : fullAddress,
+                          gioitinh: gioiTinh,
+                          ngaysinh:
+                              selectedDate != null
+                                  ? '${selectedDate!.year}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.day.toString().padLeft(2, '0')}'
+                                  : DateTime.now().toIso8601String().substring(
+                                    0,
+                                    10,
+                                  ),
                         );
-                        Navigator.pop(context, true); // Trả về true để reload
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(result['message'] ?? 'Thêm thất bại'),
-                          ),
-                        );
+                        if (result['id'] != null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Thêm nhân viên thành công'),
+                            ),
+                          );
+                          Navigator.pop(context, true);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                result['message'] ?? 'Thêm thất bại',
+                              ),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        ScaffoldMessenger.of(
+                          context,
+                        ).showSnackBar(SnackBar(content: Text(e.toString())));
                       }
                     }
                   },

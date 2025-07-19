@@ -123,7 +123,7 @@ class HoaDonRepository {
     return response.statusCode == 200;
   }
 
-  // Các API khác nếu cần (ví dụ: lấy đơn sắp hết hạn, đơn chờ trả hàng, kiểm tra trả hàng...)
+  // kiểm tra đơn hàng hết hnạ
   Future<List<Map<String, dynamic>>> getDonSapHetHan() async {
     final response = await http.get(Uri.parse('${baseUrl}hoadon/sap-het-han'));
     if (response.statusCode == 200) {

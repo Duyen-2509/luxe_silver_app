@@ -55,24 +55,19 @@ class _ProductFilterScreenState extends State<ProductFilterScreen>
       );
     }
 
-    // Các nhóm khác giữ nguyên
     final filtered =
         widget.products.where((sp) {
           final matchLoai = sp.idLoai == widget.loai;
           final tenpkLower = sp.tenpk?.toLowerCase() ?? '';
           final tenloaiLower = sp.tenloai.toLowerCase();
-          final nhomTokens = nhomLower.split(' ');
-          final matchNhom = nhomTokens.any(
-            (token) =>
-                tenpkLower.contains(token) || tenloaiLower.contains(token),
-          );
+          final matchNhom =
+              tenpkLower == nhomLower || tenloaiLower == nhomLower;
           final matchGioiTinh =
               (widget.loai == 2 || widget.loai == 3)
                   ? true
                   : sp.gioitinh.toLowerCase() == widget.gioiTinh.toLowerCase();
           return matchLoai && matchNhom && matchGioiTinh;
         }).toList();
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColors.appBarBackground,

@@ -18,7 +18,6 @@ class _SuaNhanVienScreenState extends State<SuaNhanVienScreen> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _tenController;
   late TextEditingController _sdtController;
-  //late TextEditingController _emailController;
   late TextEditingController _matKhauController;
   String? gioiTinh;
   DateTime? selectedDate;
@@ -40,7 +39,6 @@ class _SuaNhanVienScreenState extends State<SuaNhanVienScreen> {
     final nv = widget.nhanVien;
     _tenController = TextEditingController(text: nv['ten'] ?? '');
     _sdtController = TextEditingController(text: nv['sodienthoai'] ?? '');
-    // _emailController = TextEditingController(text: nv['email'] ?? '');
     _matKhauController = TextEditingController();
     gioiTinh = nv['gioitinh'] ?? 'Nữ';
     _ngaySinhController = TextEditingController(
@@ -398,12 +396,6 @@ class _SuaNhanVienScreenState extends State<SuaNhanVienScreen> {
                       final result = await userController.updateStaff(
                         idNv: widget.nhanVien['id_nv'],
                         ten: _tenController.text.trim(),
-                        sodienthoai: _sdtController.text.trim(),
-                        //email: _emailController.text.trim(),
-                        password:
-                            _matKhauController.text.trim().isEmpty
-                                ? null
-                                : _matKhauController.text.trim(),
                         diachi: fullAddress.isEmpty ? null : fullAddress,
                         gioitinh: gioiTinh,
                         ngaysinh:
@@ -421,7 +413,7 @@ class _SuaNhanVienScreenState extends State<SuaNhanVienScreen> {
                             content: Text('Cập nhật nhân viên thành công'),
                           ),
                         );
-                        Navigator.pop(context, true); // reload lại danh sách
+                        Navigator.pop(context, true);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(

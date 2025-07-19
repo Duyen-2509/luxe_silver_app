@@ -24,7 +24,6 @@ class ProductRepository {
     var request = http.MultipartRequest('POST', uri);
     request.headers['Accept'] = 'application/json';
     request.fields['tensp'] = tensp;
-    // Lấy giá đầu tiên để hiển thị ngoài bảng sản phẩm (nếu cần)
     request.fields['gia'] = sizes.isNotEmpty ? (sizes[0]['price'] ?? '0') : '0';
     request.fields['gioitinh'] = gioitinh;
     request.fields['chatlieu'] = chatlieu;
@@ -37,7 +36,6 @@ class ProductRepository {
       request.fields['sizes[$i][size]'] = sizes[i]['size'] ?? '';
       request.fields['sizes[$i][quantity]'] = sizes[i]['quantity'] ?? '';
       request.fields['sizes[$i][price]'] = sizes[i]['price'] ?? '';
-      // Nếu cần gửi đơn vị:
       if (sizes[i]['donvi'] != null) {
         request.fields['sizes[$i][donvi]'] = sizes[i]['donvi']!;
       }
@@ -82,7 +80,7 @@ class ProductRepository {
     required String donvi, //
   }) async {
     var uri = Uri.parse('${apiService.baseUrl}products/$id');
-    var request = http.MultipartRequest('POST', uri); // Dùng POST + _method=PUT
+    var request = http.MultipartRequest('POST', uri);
     request.fields['_method'] = 'PUT';
 
     request.fields['tensp'] = tensp;

@@ -37,6 +37,16 @@ class CartController extends ChangeNotifier {
     }
   }
 
+  void removeManyFromCart(List<CartItem> itemsToRemove) {
+    cartItems.removeWhere(
+      (item) => itemsToRemove.any(
+        (selected) =>
+            selected.sanPham.idSp == item.sanPham.idSp &&
+            selected.selectedSize == item.selectedSize,
+      ),
+    );
+  }
+
   void updateQuantity(int index, int newQuantity) {
     if (index >= 0 && index < _cartItems.length && newQuantity > 0) {
       _cartItems[index].soLuong = newQuantity;

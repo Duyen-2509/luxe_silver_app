@@ -4,7 +4,6 @@ import 'package:luxe_silver_app/constant/app_color.dart';
 class NhanVienCard extends StatelessWidget {
   final String ten;
   final String sdt;
-  //final String email;
   final String diaChi;
   final bool isActive;
   final ValueChanged<bool>? onLockChanged;
@@ -13,7 +12,6 @@ class NhanVienCard extends StatelessWidget {
     super.key,
     required this.ten,
     required this.sdt,
-    // required this.email,
     required this.diaChi,
     required this.isActive,
     this.onLockChanged,

@@ -9,12 +9,9 @@ class LoginController {
 
   late final AuthRepository authRepository = AuthRepository(apiService);
 
-  /// Đăng nhập bằng số điện thoại và mật khẩu
-  /// Trả về true nếu thành công, false nếu thất bại
   Future<bool> login(String phone, String password) async {
     final response = await authRepository.loginWithPhone(phone, password);
     if (response.containsKey('id') && response.containsKey('sodienthoai')) {
-      // Có thể lưu thông tin user vào local nếu cần
       return true;
     }
     return false;

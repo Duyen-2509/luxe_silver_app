@@ -33,18 +33,16 @@ class SanPham {
     this.updatedAt,
   });
 
-  /// Lấy giá thấp nhất từ details (nếu có), nếu không thì lấy trường gia, trả về chuỗi đã format
   String get formattedMinPrice {
-    // Nếu có details và có ít nhất 1 phần tử, lấy giá nhỏ nhất trong details
     if (details != null && details!.isNotEmpty) {
       final minGia = details!.map((d) => d.gia).reduce((a, b) => a < b ? a : b);
       return '${minGia.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')} đ';
     }
-    // Nếu không có details, lấy trường gia (giá tổng quát của sản phẩm)
+
     if (gia != null) {
       return '${gia!.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]}.')} đ';
     }
-    // Nếu không có giá, trả về "Liên hệ"
+
     return 'Liên hệ';
   }
 

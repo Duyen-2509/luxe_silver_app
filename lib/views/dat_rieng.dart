@@ -269,7 +269,7 @@ class ContactDialog {
   }
 
   static Future<void> _showEditContactDialog(
-    BuildContext parentContext, // Đổi tên tham số
+    BuildContext parentContext,
     ContactInfoController controller,
     int id,
   ) async {
@@ -277,7 +277,7 @@ class ContactDialog {
     final zaloController = TextEditingController(text: controller.phoneZalo);
 
     await showDialog(
-      context: parentContext, // Dùng context cha
+      context: parentContext,
       builder:
           (context) => AlertDialog(
             backgroundColor: AppColors.alertDialog,
@@ -314,14 +314,9 @@ class ContactDialog {
                   Navigator.pop(context);
                   if (success) {
                     _showSuccessSnackBar(parentContext, 'Cập nhật thành công!');
-                    // Reload lại dialog liên hệ
+
                     await controller.loadContactInfo(id);
-                    show(
-                      parentContext,
-                      controller,
-                      id,
-                      isAdmin: true,
-                    ); // Dùng context cha
+                    show(parentContext, controller, id, isAdmin: true);
                   } else {
                     _showSuccessSnackBar(parentContext, 'Cập nhật thất bại!');
                   }

@@ -5,14 +5,6 @@ import '../repository/comment_repository.dart';
 import '../services/api_service.dart';
 import '../constant/image.dart';
 
-/// Widget hiển thị phần bình luận và đánh giá sản phẩm
-///
-/// Logic hoạt động:
-/// 1. Khách hàng bình luận: id_nv = null, traloi_kh = null
-/// 2. Nhân viên trả lời: cập nhật id_nv và traloi_kh vào record hiện tại
-/// 3. Hiển thị trả lời: chỉ hiện khi id_nv != null và traloi_kh != null
-/// 4. Xóa trả lời: set id_nv = null, traloi_kh = null, ten_nhan_vien = null
-/// 5. Bất kỳ nhân viên nào cũng có thể xóa/sửa trả lời (không phân biệt ai đã trả lời)
 class CommentSection extends StatefulWidget {
   final int productId;
   final Map<String, dynamic> userData;
@@ -86,7 +78,6 @@ class _CommentSectionState extends State<CommentSection> {
   }
 
   /// Nhân viên trả lời bình luận
-  /// Logic: Cập nhật id_nv, traloi_kh, ten_nhan_vien vào record hiện tại
   /// [comment] - dữ liệu bình luận cần trả lời
   Future<void> _replyToComment(
     BuildContext context,
@@ -102,11 +93,10 @@ class _CommentSectionState extends State<CommentSection> {
         final result = await _commentController.replyComment(comment['id_bl'], {
           'id_nv': widget.userData['id_nv'],
           'traloi_kh': reply.trim(),
-          'id_sp': widget.productId, // Sử dụng productId từ widget
+          'id_sp': widget.productId,
         });
 
         if (result != null) {
-          // Refresh UI sau khi trả lời thành công
           setState(() {});
           _showSuccessMessage('Đã trả lời bình luận thành công');
         }
@@ -119,8 +109,6 @@ class _CommentSectionState extends State<CommentSection> {
   }
 
   /// Nhân viên sửa trả lời đã có
-  /// Logic: Cập nhật lại nội dung traloi_kh
-  /// [comment] - dữ liệu bình luận cần sửa trả lời
   Future<void> _editReply(
     BuildContext context,
     Map<String, dynamic> comment,
@@ -138,7 +126,7 @@ class _CommentSectionState extends State<CommentSection> {
       setState(() => _isLoading = true);
 
       try {
-        // Gọi lại API trả lời với nội dung mới (API sẽ cập nhật thay vì tạo mới)
+        // Gọi lại API trả lời với nội dung mới
         final result = await _commentController.replyComment(comment['id_bl'], {
           'id_nv': widget.userData['id_nv'],
           'traloi_kh': newReply.trim(),
@@ -158,9 +146,6 @@ class _CommentSectionState extends State<CommentSection> {
   }
 
   /// Nhân viên xóa trả lời
-  /// Logic: Set id_nv = null, traloi_kh = null, ten_nhan_vien = null
-  /// Bất kỳ nhân viên nào cũng có thể xóa (không phân biệt ai đã trả lời)
-  /// [comment] - dữ liệu bình luận cần xóa trả lời
   Future<void> _deleteReply(
     BuildContext context,
     Map<String, dynamic> comment,
@@ -178,8 +163,7 @@ class _CommentSectionState extends State<CommentSection> {
         // Gọi API xóa trả lời - truyền id_ctbl và id_nv hiện tại
         final result = await _commentController.deleteReply(
           comment['id_ctbl'], // ID của chi tiết bình luận
-          widget
-              .userData['id_nv'], // ID nhân viên hiện tại (không nhất thiết phải là người đã trả lời)
+          widget.userData['id_nv'],
         );
 
         if (result != null) {
@@ -195,8 +179,6 @@ class _CommentSectionState extends State<CommentSection> {
   }
 
   /// Hiển thị dialog nhập trả lời
-  /// [title] - tiêu đề dialog
-  /// [initialText] - text ban đầu (dùng cho edit)
   Future<String?> _showReplyModal(
     BuildContext context,
     String title,
@@ -258,8 +240,6 @@ class _CommentSectionState extends State<CommentSection> {
   }
 
   /// Hiển thị dialog xác nhận
-  /// [title] - tiêu đề dialog
-  /// [content] - nội dung dialog
   Future<bool?> _showConfirmDialog(
     BuildContext context,
     String title,
@@ -315,8 +295,6 @@ class _CommentSectionState extends State<CommentSection> {
   }
 
   /// Kiểm tra xem có trả lời hay không
-  /// Logic: Kiểm tra id_nv != null và traloi_kh != null và không rỗng
-  /// [comment] - dữ liệu bình luận cần kiểm tra
   bool _hasReply(Map<String, dynamic> comment) {
     final idNv = comment['id_nv'];
     final reply = comment['traloi_kh']?.toString().trim();
@@ -325,19 +303,16 @@ class _CommentSectionState extends State<CommentSection> {
   }
 
   /// Lấy tên nhân viên đã trả lời
-  /// [comment] - dữ liệu bình luận
   String _getReplyStaffName(Map<String, dynamic> comment) {
     return comment['ten_nhan_vien']?.toString() ?? 'Nhân viên';
   }
 
   /// Lấy ID nhân viên đã trả lời
-  /// [comment] - dữ liệu bình luận
   String _getReplyStaffId(Map<String, dynamic> comment) {
     return comment['id_nv']?.toString() ?? '';
   }
 
   /// Xây dựng widget hiển thị một bình luận
-  /// [comment] - dữ liệu bình luận
   Widget _buildCommentItem(Map<String, dynamic> comment) {
     final hasReply = _hasReply(comment);
     final isStaff = _isStaffUser();
@@ -395,7 +370,6 @@ class _CommentSectionState extends State<CommentSection> {
   }
 
   /// Xây dựng thông tin khách hàng và đánh giá
-  /// [comment] - dữ liệu bình luận
   Widget _buildCustomerInfo(Map<String, dynamic> comment) {
     final customerName = comment['ten_khach_hang']?.toString() ?? 'Khách hàng';
     final rating =
@@ -421,7 +395,6 @@ class _CommentSectionState extends State<CommentSection> {
   }
 
   /// Xây dựng nội dung bình luận
-  /// [comment] - dữ liệu bình luận
   Widget _buildCommentContent(Map<String, dynamic> comment) {
     final content = comment['noidung']?.toString() ?? '';
 
@@ -438,8 +411,6 @@ class _CommentSectionState extends State<CommentSection> {
   }
 
   /// Xây dựng phần trả lời của nhân viên
-  /// Logic: Chỉ hiển thị khi id_nv != null và traloi_kh != null
-  /// [comment] - dữ liệu bình luận
   /// [isStaff] - có phải nhân viên không
   /// [replyStaffName] - tên nhân viên đã trả lời
   /// [replyStaffId] - ID nhân viên đã trả lời
@@ -520,9 +491,6 @@ class _CommentSectionState extends State<CommentSection> {
               ],
 
               const Spacer(),
-
-              // Các nút chức năng (chỉ cho staff)
-              // Bất kỳ nhân viên nào cũng có thể sửa/xóa trả lời
               if (isStaff) ...[
                 TextButton(
                   onPressed:
@@ -560,7 +528,6 @@ class _CommentSectionState extends State<CommentSection> {
   }
 
   /// Xây dựng nút trả lời
-  /// [comment] - dữ liệu bình luận
   Widget _buildReplyButton(Map<String, dynamic> comment) {
     return Align(
       alignment: Alignment.centerLeft,

@@ -446,7 +446,7 @@ class _ThongKeScreenState extends State<ThongKeScreen> {
   ) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white, // Giữ nền trắng như cũ
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.black),
       ),

@@ -9,8 +9,6 @@ import 'package:luxe_silver_app/views/chi_tiet_sp.dart';
 import 'package:luxe_silver_app/views/tai_khoan.dart';
 import 'package:luxe_silver_app/views/voucher_screen.dart';
 
-// Controller quản lý giỏ hàng (singleton)
-
 class CartScreen extends StatefulWidget {
   final Map<String, dynamic> userData;
 
@@ -104,7 +102,7 @@ class _CartScreenState extends State<CartScreen> {
                       padding: const EdgeInsets.all(16),
                       itemCount: cartController.cartItems.length,
                       itemBuilder: (context, index) {
-                        // Luôn đồng bộ lại _selectedItems với số lượng sản phẩm trong giỏ
+                        // đồng bộ lại _selectedItems với số lượng sản phẩm trong giỏ
                         if (_selectedItems.length !=
                             cartController.cartItems.length) {
                           _selectedItems = List.generate(
@@ -463,7 +461,7 @@ class _CartScreenState extends State<CartScreen> {
                 onChanged: (value) {
                   setState(() {
                     _selectedItems[index] = value ?? false;
-                    // Nếu bỏ chọn bất kỳ sản phẩm nào, bỏ chọn "chọn tất cả"
+                    //  bỏ chọn bất kỳ sản phẩm nào, bỏ chọn "chọn tất cả"
                     if (!_selectedItems[index]) {
                       _selectAll = false;
                     } else if (_selectedItems.every((e) => e)) {
@@ -566,7 +564,7 @@ class _CartScreenState extends State<CartScreen> {
                                       ],
                                     ),
                               );
-                              return; // Dừng lại, không cho thanh toán
+                              return;
                             }
                           }
                           // Nếu hợp lệ, cho thanh toán các sản phẩm đã chọn

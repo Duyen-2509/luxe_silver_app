@@ -18,7 +18,7 @@ class ProductSearchHelper {
   }
 }
 
-/// Hàm lắng nghe giọng nói, trả về kết quả recognizedWords
+///hàm lắng nghe giọng nói, trả về kết quả recognizedWords
 Future<String?> listenForSearchText(
   BuildContext context, {
   String localeId = 'vi_VN',
@@ -53,7 +53,7 @@ Future<String?> listenForSearchText(
     partialResults: false,
   );
 
-  // Hiện dialog trong lúc đang nghe (không await)
+  // Hiện dialog trong lúc đang nghe
   showDialog(
     context: context,
     barrierDismissible: false,

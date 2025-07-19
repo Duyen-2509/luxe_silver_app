@@ -54,13 +54,27 @@ class VoucherCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            '${voucher['ten'] ?? ''}',
-                            style: TextStyle(
-                              fontSize: AppStyles.voucherTitle.fontSize,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black,
-                            ),
+                          Row(
+                            children: [
+                              if (voucher['trangthai'] == 0 ||
+                                  voucher['trangthai'] == '0')
+                                const Icon(
+                                  Icons.lock,
+                                  color: Colors.red,
+                                  size: 18,
+                                ),
+                              if (voucher['trangthai'] == 0 ||
+                                  voucher['trangthai'] == '0')
+                                const SizedBox(width: 4),
+                              Text(
+                                '${voucher['ten'] ?? ''}',
+                                style: TextStyle(
+                                  fontSize: AppStyles.voucherTitle.fontSize,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
                           ),
 
                           Text(

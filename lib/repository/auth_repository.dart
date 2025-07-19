@@ -22,7 +22,7 @@ class AuthRepository {
         body: json.encode({
           'sodienthoai': phone,
           'password': password,
-          'token': token, // Gửi token lên API
+          'token': token,
         }),
       );
       print(response.body);
@@ -55,7 +55,7 @@ class AuthRepository {
           'password': password,
         }),
       );
-      // Luôn thử decode JSON, nếu lỗi thì trả về lỗi mặc định
+
       Map<String, dynamic>? data;
       try {
         data = json.decode(response.body);
@@ -65,7 +65,6 @@ class AuthRepository {
       if (response.statusCode == 201 && data != null && data['id'] != null) {
         return data;
       } else {
-        // Trả về thông báo lỗi từ backend nếu có, nếu không thì trả về lỗi mặc định
         return {
           'error':
               data != null && data['message'] != null

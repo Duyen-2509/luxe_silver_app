@@ -6,12 +6,10 @@ import 'package:luxe_silver_app/views/voucher_cart.dart';
 import 'package:luxe_silver_app/views/voucher_edit.dart';
 import 'package:intl/intl.dart';
 
-/// Màn hình hiển thị danh sách voucher
-/// Cho phép người dùng chọn voucher để áp dụng vào đơn hàng
 class VoucherScreen extends StatefulWidget {
-  final double cartTotal; // Tổng giá trị giỏ hàng
-  final Map<String, dynamic> userData; // Thông tin người dùng
-  final Map<String, dynamic>? selectedVoucher; // Voucher đã chọn (nếu có)
+  final double cartTotal; //tổng giá trị giỏ hàng
+  final Map<String, dynamic> userData; //thông tin người dùng
+  final Map<String, dynamic>? selectedVoucher; //voucher đã chọn (nếu có)
   final bool isAdmin;
 
   const VoucherScreen({
@@ -27,13 +25,11 @@ class VoucherScreen extends StatefulWidget {
 }
 
 class _VoucherScreenState extends State<VoucherScreen> {
-  // Controller xử lý các thao tác với voucher
   final voucherController = VoucherController();
-
-  // Future để load danh sách voucher từ server
+  // load danh sách voucher từ server
   late Future<List<Map<String, dynamic>>> _voucherFuture;
 
-  // Voucher hiện tại được chọn
+  //voucher hiện tại được chọn
   Map<String, dynamic>? selectedVoucher;
 
   bool get isAdmin => widget.userData['role'] == 'admin';
@@ -41,9 +37,9 @@ class _VoucherScreenState extends State<VoucherScreen> {
   @override
   void initState() {
     super.initState();
-    // Khởi tạo việc load voucher khi màn hình được tạo
+    // khởi tạo việc load voucher khi màn hình được tạo
     _voucherFuture = voucherController.fetchVouchers();
-    // Gán voucher đã chọn từ tham số truyền vào
+    //gán voucher đã chọn từ tham số truyền vào
     selectedVoucher = widget.selectedVoucher;
   }
 
@@ -55,7 +51,6 @@ class _VoucherScreenState extends State<VoucherScreen> {
     final minOrderStr = formatter.format(minOrder);
 
     return Scaffold(
-      // Thanh tiêu đề
       appBar: AppBar(
         title: Text('Voucher'),
         backgroundColor: AppColors.appBarBackground,
@@ -74,8 +69,6 @@ class _VoucherScreenState extends State<VoucherScreen> {
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(child: Text('Không có voucher nào'));
           }
-
-          // final vouchers = snapshot.data!;
           final now = DateTime.now();
           final vouchers =
               snapshot.data!
@@ -192,14 +185,12 @@ class _VoucherScreenState extends State<VoucherScreen> {
                 child: ListView.separated(
                   padding: EdgeInsets.all(8),
                   itemCount: vouchers.length,
-                  separatorBuilder:
-                      (_, __) =>
-                          SizedBox(height: 8), // Khoảng cách giữa các item
+                  separatorBuilder: (_, __) => SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final voucher = vouchers[index];
                     final minOrder =
                         voucher['giatri_min'] ??
-                        0; // Giá trị đơn hàng tối thiểu
+                        0; //ggiá trị đơn hàng tối thiểu
                     final isAdmin =
                         widget.userData['role'] == 'admin'; // Kiểm tra admin
 
@@ -216,12 +207,10 @@ class _VoucherScreenState extends State<VoucherScreen> {
                                 : 0.4, // Làm mờ voucher không đủ điều kiện
                         child: Builder(
                           builder: (context) {
-                            // DEBUG: In ra giá trị để kiểm tra
+                            //////// in thử ra giá trị để kiểm tra
                             print(
                               'Voucher ID: ${voucher['id']}, Selected ID: ${selectedVoucher?['id']}',
                             );
-
-                            // Tính toán isSelected với nhiều cách kiểm tra
                             final isSelected =
                                 selectedVoucher != null &&
                                 voucher['id'] != null &&
@@ -236,7 +225,7 @@ class _VoucherScreenState extends State<VoucherScreen> {
                               voucher: voucher,
                               onTap: (tappedVoucher) {
                                 if (isAdmin) {
-                                  // Nếu là admin, chuyển sang trang chỉnh sửa voucher
+                                  //admin, chuyển sang trang chỉnh sửa voucher
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -245,13 +234,13 @@ class _VoucherScreenState extends State<VoucherScreen> {
                                             voucher: {
                                               'id':
                                                   voucher['id'] ??
-                                                  voucher['id_voucher'], // Đảm bảo luôn có trường 'id'
+                                                  voucher['id_voucher'],
                                               ...voucher,
                                             },
                                           ),
                                     ),
                                   ).then((_) {
-                                    // Sau khi chỉnh sửa xong, reload lại danh sách voucher
+                                    //  reload lại danh sách voucher
                                     setState(() {
                                       _voucherFuture =
                                           voucherController.fetchVouchers();
@@ -346,12 +335,11 @@ class _VoucherScreenState extends State<VoucherScreen> {
               ? FloatingActionButton(
                 backgroundColor: AppColors.appBarBackground,
                 onPressed: () {
-                  // Chuyển đến màn hình thêm voucher
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => AddVoucherScreen()),
                   ).then((_) {
-                    // Sau khi thêm voucher xong, reload lại danh sách
+                    //reload lại danh sách
                     setState(() {
                       _voucherFuture = voucherController.fetchVouchers();
                     });

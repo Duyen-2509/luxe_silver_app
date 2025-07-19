@@ -162,7 +162,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       context,
     ).showSnackBar(SnackBar(content: Text(result ?? 'Có lỗi xảy ra')));
 
-    // Nếu lưu thành công thì reset form
+    //  reset form
     if (result != null && result.contains('thành công')) {
       setState(() {
         nameController.clear();
@@ -177,7 +177,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         type = 'Lẻ';
         sizeUnit = 'mm';
         productImages.clear();
-        sizeFieldsKey++; // Tăng key để rebuild lại các trường size
+        sizeFieldsKey++;
       });
       _formKey.currentState?.reset();
     }
@@ -739,7 +739,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8), // tuỳ chỉnh bo góc
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
                 child: const Text('Lưu sản phẩm'),

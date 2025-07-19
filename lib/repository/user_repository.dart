@@ -104,12 +104,10 @@ class UserRepository {
     }
   }
 
-  // ...existing code...
-
   Future<Map<String, dynamic>> addStaff({
     required String ten,
     required String sodienthoai,
-    required String email,
+    //required String email,
     required String password,
     String? diachi,
     String? ngaysinh,
@@ -120,27 +118,35 @@ class UserRepository {
       url,
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
         'Authorization': 'Bearer ${ApiService.TOKEN}',
       },
       body: jsonEncode({
         'ten': ten,
         'sodienthoai': sodienthoai,
-        'email': email,
+        // 'email': email,
         'password': password,
         'diachi': diachi,
         'ngaysinh': ngaysinh,
         'gioitinh': gioitinh,
       }),
     );
-    return jsonDecode(response.body);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return jsonDecode(response.body);
+    } else if (response.statusCode == 422) {
+      // Trả về lỗi chi tiết cho UI xử lý
+      final error = jsonDecode(response.body);
+      return Future.error(error['message'] ?? 'Dữ liệu không hợp lệ');
+    } else {
+      print('Lỗi server: ${response.statusCode}');
+      print(response.body);
+      throw Exception('Lỗi server');
+    }
   }
 
   Future<Map<String, dynamic>> updateStaff({
     required int idNv,
     String? ten,
-    String? sodienthoai,
-    String? email,
-    String? password,
     String? diachi,
     String? ngaysinh,
     String? gioitinh,
@@ -155,9 +161,6 @@ class UserRepository {
       body: jsonEncode({
         'id_nv': idNv,
         if (ten != null) 'ten': ten,
-        if (sodienthoai != null) 'sodienthoai': sodienthoai,
-        if (email != null) 'email': email,
-        if (password != null) 'password': password,
         if (diachi != null) 'diachi': diachi,
         if (ngaysinh != null) 'ngaysinh': ngaysinh,
         if (gioitinh != null) 'gioitinh': gioitinh,

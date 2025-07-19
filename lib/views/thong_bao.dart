@@ -26,7 +26,7 @@ class ThongBaoScreen extends StatefulWidget {
 
 class _ThongBaoScreenState extends State<ThongBaoScreen> {
   late Future<Map<String, List<dynamic>>> _futureThongBao;
-  // Lưu id_tb đã hiện notification để tránh lặp lại
+  // Lưu id_tb đã hiện thông báo để tránh lặp lại
   final Set<int> _notifiedIds = {};
 
   @override
@@ -65,14 +65,14 @@ class _ThongBaoScreenState extends State<ThongBaoScreen> {
       android: androidPlatformChannelSpecifics,
     );
     await flutterLocalNotificationsPlugin.show(
-      DateTime.now().millisecondsSinceEpoch ~/ 1000, // unique id
+      DateTime.now().millisecondsSinceEpoch ~/ 1000,
       title,
       body,
       platformChannelSpecifics,
     );
   }
 
-  // Hàm hiện notification cho các thông báo chưa đọc, không lặp lại
+  // Hàm hiện thông b cho các thông báo chưa đọc, không lặp lại
   void _notifyUnread(List<dynamic> donHangList, List<dynamic> binhLuanList) {
     for (var tb in [...donHangList, ...binhLuanList]) {
       final int? idTb = tb['id_tb'];
@@ -110,7 +110,7 @@ class _ThongBaoScreenState extends State<ThongBaoScreen> {
             final donHangList = snapshot.data?['don_hang'] ?? [];
             final binhLuanList = snapshot.data?['binh_luan'] ?? [];
 
-            // Hiện notification cho các thông báo chưa đọc (không lặp lại)
+            // Hiện thông báo cho các thông báo chưa đọc (không lặp lại)
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _notifyUnread(donHangList, binhLuanList);
             });

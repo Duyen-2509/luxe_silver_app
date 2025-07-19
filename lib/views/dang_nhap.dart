@@ -20,7 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final passwordController = TextEditingController();
   final loginController = LoginController();
 
-  bool _obscurePassword = true; // Biến điều khiển ẩn/hiện mật khẩu
+  bool _obscurePassword = true;
   Future<void> saveLoginInfo(String token, int id, String role) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('token', token);
@@ -103,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   );
                   print('userData-------------->: $userData');
                   if (userData != null) {
-                    // Nếu là nhân viên hoặc admin, gán id_nv cho userData
+                    //  nhân viên hoặc admin, gán id_nv cho userData
                     if (userData['role'] == 'admin' ||
                         userData['role'] == 'nhan_vien') {
                       userData['id_nv'] = userData['id_nv'] ?? userData['id'];
@@ -114,8 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     if (token != null && token is String && token.isNotEmpty) {
                       if (!userData.containsKey('role') ||
                           userData['role'] == null) {
-                        userData['role'] =
-                            'khach_hang'; // hoặc xác định role theo logic của bạn
+                        userData['role'] = 'khach_hang';
                       }
                       await saveLoginInfo(
                         token,

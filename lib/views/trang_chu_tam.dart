@@ -24,7 +24,6 @@ class _GuestHomeScreenState extends State<GuestHomeScreen> {
   late List<SanPham> _allProducts = [];
   List<SanPham> _filteredProducts = [];
   bool _isRefreshing = false;
-  // Thay đổi: dùng getter để luôn lấy dữ liệu mới
   Future<List<SanPham>> get _futureProducts =>
       ProductDataRepository(ApiService()).fetchProducts();
   final controller = ContactInfoController();
@@ -32,7 +31,6 @@ class _GuestHomeScreenState extends State<GuestHomeScreen> {
     Navigator.pushNamed(context, '/login');
   }
 
-  // Thêm method để refresh data
   Future<void> _refreshData() async {
     if (_isRefreshing) return;
 
@@ -41,7 +39,6 @@ class _GuestHomeScreenState extends State<GuestHomeScreen> {
     });
 
     try {
-      // Thêm delay nhỏ để có hiệu ứng refresh
       await Future.delayed(const Duration(milliseconds: 500));
       setState(() {});
     } finally {
@@ -51,13 +48,11 @@ class _GuestHomeScreenState extends State<GuestHomeScreen> {
     }
   }
 
-  // Method để ẩn bàn phím và bỏ focus
   void _dismissKeyboard() {
     _searchFocusNode.unfocus();
     FocusScope.of(context).unfocus();
   }
 
-  // Method xử lý tìm kiếm
   void _onSearchChanged(String value) {
     setState(() {
       _filteredProducts = ProductSearchHelper.searchProductsByName(
@@ -67,12 +62,9 @@ class _GuestHomeScreenState extends State<GuestHomeScreen> {
     });
   }
 
-  // Method xử lý khi submit search
   void _onSearchSubmitted(String value) {
     _dismissKeyboard();
-    // Thêm logic xử lý tìm kiếm ở đây
     if (value.trim().isNotEmpty) {
-      // Có thể navigate đến trang tìm kiếm hoặc filter sản phẩm
       print('Search submitted: $value');
     }
   }
@@ -99,7 +91,6 @@ class _GuestHomeScreenState extends State<GuestHomeScreen> {
   Widget build(BuildContext context) {
     final double cartTotal = 0.0;
     return GestureDetector(
-      // Thêm GestureDetector để ẩn bàn phím khi tap outside
       onTap: _dismissKeyboard,
       child: Scaffold(
         key: _scaffoldKey,
@@ -110,7 +101,7 @@ class _GuestHomeScreenState extends State<GuestHomeScreen> {
           leading: IconButton(
             icon: const Icon(Icons.menu, color: Colors.black),
             onPressed: () {
-              _dismissKeyboard(); // Ẩn bàn phím trước khi mở drawer
+              _dismissKeyboard();
               _scaffoldKey.currentState?.openDrawer();
             },
           ),

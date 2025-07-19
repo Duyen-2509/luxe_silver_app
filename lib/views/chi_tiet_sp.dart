@@ -37,8 +37,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _currentImageIndex = 0;
   // Biến để kiểm soát việc hiển thị bình luận
   bool showComments = false;
-  // 2 bình luận mẫu
-
   Widget _buildStars(int star) {
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -277,11 +275,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                             if (isFreesize)
                               Card(
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(
-                                    5,
-                                  ), // độ cong góc
+                                  borderRadius: BorderRadius.circular(5),
                                 ),
-                                color: Colors.grey[200], // màu nền xám nhạt
+                                color: Colors.grey[200],
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
@@ -291,7 +287,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                     'Freesize',
                                     style: TextStyle(
                                       fontSize: 12,
-                                      color: Colors.grey[500], // màu chữ
+                                      color: Colors.grey[500],
                                     ),
                                   ),
                                 ),
@@ -320,21 +316,23 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                 },
                               ),
                             const SizedBox(height: 8),
-                            Text(
-                              'Kho: ${selectedDetail?.soluongKho ?? 0}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[500],
+                            if (role == 'admin' || role == 'nhan_vien') ...[
+                              Text(
+                                'Kho: ${selectedDetail?.soluongKho ?? 0}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[500],
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Đã bán: ${selectedDetail?.soluongDaban ?? 0}',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[500],
+                              const SizedBox(height: 8),
+                              Text(
+                                'Đã bán: ${selectedDetail?.soluongDaban ?? 0}',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[500],
+                                ),
                               ),
-                            ),
+                            ],
                             const SizedBox(height: 16),
                             // Số lượng
                             if (role != 'admin' && role != 'nhan_vien') ...[
@@ -387,7 +385,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                           ),
                                         ),
                                         InkWell(
-                                          // ...existing code...
                                           onTap: () {
                                             if (quantity <
                                                 (selectedDetail?.soluongKho ??
@@ -480,7 +477,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                 ),
               ),
-              // Bottom buttons
+
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -504,9 +501,6 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     final bool isHidden = (sanPham.trangthai ?? 1) == 0;
                     final bool isOutOfStock =
                         (selectedDetail?.soluongKho ?? 0) == 0;
-
-                    // Nếu là admin: luôn cho sửa và ẩn, kể cả khi sản phẩm đã bị ẩn hoặc hết hàng
-                    // ...trong Builder của bottom buttons...
                     if (role == 'admin') {
                       return Row(
                         children: [
@@ -632,48 +626,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                                   }
                                 }
                               },
-                              // onPressed: () async {
-                              //   String? result;
-                              //   if (!isHidden) {
-                              //     // Đang hiện, cho phép ẩn
-                              //     result = await controller.hideProduct(
-                              //       sanPham.idSp,
-                              //     );
-                              //     if (result != null &&
-                              //         result.contains('thành công')) {
-                              //       ScaffoldMessenger.of(context).showSnackBar(
-                              //         const SnackBar(
-                              //           content: Text('Đã ẩn sản phẩm'),
-                              //         ),
-                              //       );
-                              //       // Load lại chi tiết sản phẩm để cập nhật trạng thái
-                              //       setState(() {
-                              //         _futureProduct = ProductDataRepository(
-                              //           ApiService(),
-                              //         ).fetchProductDetail(widget.productId);
-                              //       });
-                              //     }
-                              //   } else {
-                              //     // Đang ẩn, cho phép hiện lại
-                              //     result = await controller.showProduct(
-                              //       sanPham.idSp,
-                              //     );
-                              //     if (result != null &&
-                              //         result.contains('thành công')) {
-                              //       ScaffoldMessenger.of(context).showSnackBar(
-                              //         const SnackBar(
-                              //           content: Text('Đã hiện sản phẩm'),
-                              //         ),
-                              //       );
-                              //       Navigator.pop(context, true);
-                              //       setState(() {
-                              //         _futureProduct = ProductDataRepository(
-                              //           ApiService(),
-                              //         ).fetchProductDetail(widget.productId);
-                              //       });
-                              //     }
-                              //   }
-                              // },
+
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
                                     !isHidden ? Colors.black : Colors.green,
